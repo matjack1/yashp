@@ -230,18 +230,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\yashp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\yashp.def"
-				>
-			</File>
-			<File
-				RelativePath=".\yashp.idl"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -260,6 +248,18 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\yashp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\yashp.def"
+				>
+			</File>
+			<File
+				RelativePath=".\yashp.idl"
+				>
 			</File>
 		</Filter>
 		<Filter
