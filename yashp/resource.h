@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by ProfilerServer.rc
+// Used by yashp.rc
 //
 #define IDS_PROJNAME                    100
 #define IDR_PROFILERSERVER              101

@@ -4,7 +4,7 @@
 	Version="9,00"
 	Name="yashp"
 	ProjectGUID="{0196327B-EE5B-4B86-B05B-FEB952822B12}"
-	RootNamespace="ProfilerServer"
+	RootNamespace="yashp"
 	Keyword="AtlProj"
 	TargetFrameworkVersion="196613"
 	>
@@ -43,11 +43,11 @@
 				MkTypLibCompatible="false"
 				TargetEnvironment="1"
 				GenerateStublessProxies="true"
-				TypeLibraryName="$(IntDir)/ProfilerServer.tlb"
-				HeaderFileName="ProfilerServer_i.h"
+				TypeLibraryName="$(IntDir)/yashp.tlb"
+				HeaderFileName="yashp_i.h"
 				DLLDataFileName=""
-				InterfaceIdentifierFileName="ProfilerServer_i.c"
-				ProxyFileName="ProfilerServer_p.c"
+				InterfaceIdentifierFileName="yashp_i.c"
+				ProxyFileName="yashp_p.c"
 				ValidateParameters="true"
 			/>
 			<Tool
@@ -78,7 +78,7 @@
 				RegisterOutput="true"
 				IgnoreImportLibrary="true"
 				LinkIncremental="2"
-				ModuleDefinitionFile=".\ProfilerServer.def"
+				ModuleDefinitionFile=".\yashp.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -132,11 +132,11 @@
 				MkTypLibCompatible="false"
 				TargetEnvironment="1"
 				GenerateStublessProxies="true"
-				TypeLibraryName="$(IntDir)/ProfilerServer.tlb"
-				HeaderFileName="ProfilerServer_i.h"
+				TypeLibraryName="$(IntDir)/yashp.tlb"
+				HeaderFileName="yashp_i.h"
 				DLLDataFileName=""
-				InterfaceIdentifierFileName="ProfilerServer_i.c"
-				ProxyFileName="ProfilerServer_p.c"
+				InterfaceIdentifierFileName="yashp_i.c"
+				ProxyFileName="yashp_p.c"
 				ValidateParameters="true"
 			/>
 			<Tool
@@ -165,7 +165,7 @@
 				RegisterOutput="true"
 				IgnoreImportLibrary="true"
 				LinkIncremental="1"
-				ModuleDefinitionFile=".\ProfilerServer.def"
+				ModuleDefinitionFile=".\yashp.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -230,15 +230,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer.cpp"
+				RelativePath=".\yashp.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer.def"
+				RelativePath=".\yashp.def"
 				>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer.idl"
+				RelativePath=".\yashp.idl"
 				>
 			</File>
 			<File
@@ -298,11 +298,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer.rc"
+				RelativePath=".\yashp.rc"
 				>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer.rgs"
+				RelativePath=".\yashp.rgs"
 				>
 			</File>
 		</Filter>
@@ -311,7 +311,7 @@
 			SourceControlFiles="false"
 			>
 			<File
-				RelativePath=".\ProfilerServer_i.c"
+				RelativePath=".\yashp_i.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -333,7 +333,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ProfilerServer_i.h"
+				RelativePath=".\yashp_i.h"
 				>
 			</File>
 		</Filter>

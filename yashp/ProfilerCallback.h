@@ -3,7 +3,7 @@
 #pragma once
 #include "resource.h"       // main symbols
 
-#include "ProfilerServer_i.h"
+#include "yashp_i.h"
 
 
 #if defined(_WIN32_WCE) && !defined(_CE_DCOM) && !defined(_CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA)
@@ -17,7 +17,7 @@
 class ATL_NO_VTABLE CProfilerCallback :
 	public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<CProfilerCallback, &CLSID_ProfilerCallback>,
-	public IDispatchImpl<IProfilerCallback, &IID_IProfilerCallback, &LIBID_ProfilerServerLib, /*wMajor =*/ 1, /*wMinor =*/ 0>,
+	public IDispatchImpl<IProfilerCallback, &IID_IProfilerCallback, &LIBID_yashpLib, /*wMajor =*/ 1, /*wMinor =*/ 0>,
 	public ICorProfilerCallback2
 {
 public:
