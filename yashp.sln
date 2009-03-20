@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashpPS", "yashp\yashpPS.vcproj", "{2E6C3164-8043-4B13-8015-EF0731E90171}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashp", "yashp\yashp.vcproj", "{0196327B-EE5B-4B86-B05B-FEB952822B12}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2E6C3164-8043-4B13-8015-EF0731E90171}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2E6C3164-8043-4B13-8015-EF0731E90171}.Debug|Win32.Build.0 = Debug|Win32
+		{2E6C3164-8043-4B13-8015-EF0731E90171}.Release|Win32.ActiveCfg = Release|Win32
+		{2E6C3164-8043-4B13-8015-EF0731E90171}.Release|Win32.Build.0 = Release|Win32
+		{0196327B-EE5B-4B86-B05B-FEB952822B12}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0196327B-EE5B-4B86-B05B-FEB952822B12}.Debug|Win32.Build.0 = Debug|Win32
+		{0196327B-EE5B-4B86-B05B-FEB952822B12}.Release|Win32.ActiveCfg = Release|Win32
+		{0196327B-EE5B-4B86-B05B-FEB952822B12}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

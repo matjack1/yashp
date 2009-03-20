@@ -1,0 +1,31 @@
+// ProfilerServer.idl : IDL source for ProfilerServer
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(80ECA64F-77B2-4D95-9DF1-005196D62E1A),
+	dual,
+	nonextensible,
+	helpstring("IProfilerCallback Interface"),
+	pointer_default(unique)
+]
+interface IProfilerCallback : IDispatch{
+};
+[
+	uuid(8F817DD9-89AF-4787-A106-074ADC7779BF),
+	version(1.0),
+	helpstring("ProfilerServer 1.0 Type Library")
+]
+library ProfilerServerLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(5553A90C-3E0E-4D55-833A-CB5128BD7258),
+		helpstring("ProfilerCallback Class")
+	]
+	coclass ProfilerCallback
+	{
+		[default] interface IProfilerCallback;
+	};
+};
