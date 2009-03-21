@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="yashp"
+	Name="yashp_dll"
 	ProjectGUID="{0196327B-EE5B-4B86-B05B-FEB952822B12}"
 	RootNamespace="yashp"
 	Keyword="AtlProj"

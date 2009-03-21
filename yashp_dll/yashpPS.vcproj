@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="yashpPS"
+	Name="yashpPS_dll"
 	ProjectGUID="{2E6C3164-8043-4B13-8015-EF0731E90171}"
+	RootNamespace="yashpPS"
 	Keyword="AtlPSProj"
 	TargetFrameworkVersion="196613"
 	>
