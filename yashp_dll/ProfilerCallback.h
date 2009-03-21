@@ -38,6 +38,7 @@ END_COM_MAP()
 
 	HRESULT FinalConstruct()
 	{
+		printf("ci sono!");
 		return S_OK;
 	}
 
