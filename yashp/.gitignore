@@ -1,10 +1,2 @@
-Release
-ReleasePS
-Debug
-DebugPS
-*.user
-*_i.h
-*_i.c
-*_p.c
-*_p.h
-dlldata.c
+bin
+obj

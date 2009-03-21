@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashpPS", "yashp\yashpPS.vcproj", "{2E6C3164-8043-4B13-8015-EF0731E90171}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashpPS", "yashp_dll\yashpPS.vcproj", "{2E6C3164-8043-4B13-8015-EF0731E90171}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashp", "yashp\yashp.vcproj", "{0196327B-EE5B-4B86-B05B-FEB952822B12}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yashp", "yashp_dll\yashp.vcproj", "{0196327B-EE5B-4B86-B05B-FEB952822B12}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
