@@ -1,0 +1,26 @@
+HKCR
+{
+	Yashp.YashProfiler.1 = s 'YashProfiler Class'
+	{
+		CLSID = s '{64E1DC78-A253-4DD0-8A9E-53AF1FDDAB95}'
+	}
+	Yashp.YashProfiler = s 'YashProfiler Class'
+	{
+		CLSID = s '{64E1DC78-A253-4DD0-8A9E-53AF1FDDAB95}'
+		CurVer = s 'Yashp.YashProfiler.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {64E1DC78-A253-4DD0-8A9E-53AF1FDDAB95} = s 'YashProfiler Class'
+		{
+			ProgID = s 'Yashp.YashProfiler.1'
+			VersionIndependentProgID = s 'Yashp.YashProfiler'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			'TypeLib' = s '{D4E4E24C-BF3F-43A2-A9FD-3A2836FFA82A}'
+		}
+	}
+}

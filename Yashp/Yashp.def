@@ -1,0 +1,10 @@
+; Yashp.def : Declares the module parameters.
+
+LIBRARY      "Yashp.DLL"
+
+EXPORTS
+	DllCanUnloadNow		PRIVATE
+	DllGetClassObject	PRIVATE
+	DllRegisterServer	PRIVATE
+	DllUnregisterServer	PRIVATE
+	DllInstall		PRIVATE

@@ -1,0 +1,7 @@
+Debug
+Release
+*.user
+*_i.c
+*_i.h
+*_p.c
+*.vspscc

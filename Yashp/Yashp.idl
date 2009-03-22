@@ -1,0 +1,36 @@
+// Yashp.idl : IDL source for Yashp
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (Yashp.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(9358613F-71D8-40FB-8186-81E429EA5300),
+	dual,
+	nonextensible,
+	helpstring("IYashProfiler Interface"),
+	pointer_default(unique)
+]
+interface IYashProfiler : IDispatch{
+};
+[
+	uuid(D4E4E24C-BF3F-43A2-A9FD-3A2836FFA82A),
+	version(1.0),
+	helpstring("Yashp 1.0 Type Library")
+]
+library YashpLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(64E1DC78-A253-4DD0-8A9E-53AF1FDDAB95),
+		helpstring("YashProfiler Class")
+	]
+	coclass YashProfiler
+	{
+		[default] interface IYashProfiler;
+	};
+};
