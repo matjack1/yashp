@@ -16,22 +16,43 @@
 
 #pragma once
 
+
 #include "CorProfilerCallback.h"
+#include <string>
+#include <iostream>
 
 class CFunctionInfo
 {
 public:
-	CFunctionInfo(FunctionID functionID, const char* name);
+	CFunctionInfo(FunctionID functionID);
 	virtual ~CFunctionInfo();
 
-	char* GetName();
-	FunctionID GetFunctionID();
-	long GetCallCount();
-	void IncrementCallCount();
+	inline std::string getFunctionName() { return m_sFunctionName; }
+	inline std::string getClassName() { return m_sClassName; }
+	inline std::string getParameters() { return m_sParameters; }
+	inline std::string getReturnType() { return m_sReturnType; }
+
+	FunctionID getFunctionID();
+	long getCallCount();
+
+	void incrementCallCount();
+
+	static void setProfilerInfo(ICorProfilerInfo2* profilerInfo);
 
 private:
 	FunctionID m_functionID;
-	char* m_name;
+	
 	long m_callCount;
+
+	void fillSignature();
+	HRESULT fillSignatureImpl(UINT32* methodAttributes, ULONG *argCount, WCHAR *returnType, WCHAR *parameters, WCHAR *className, WCHAR *funName);
+	PCCOR_SIGNATURE parseElementType( IMetaDataImport *metaDataImport, PCCOR_SIGNATURE signature, char *buffer );
+	static ICorProfilerInfo2* m_profilerInfo;
+
+	std::string m_sReturnType;
+	std::string m_sParameters;
+	std::string m_sClassName;
+	std::string m_sFunctionName;
+	UINT32 m_iMethodAttributes;
 
 };

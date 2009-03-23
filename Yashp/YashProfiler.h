@@ -43,6 +43,11 @@ CYashProfiler();
     // STARTUP/SHUTDOWN EVENTS
     STDMETHOD(Initialize)(IUnknown *pICorProfilerInfoUnk);
     STDMETHOD(Shutdown)();
+	STDMETHOD(ThreadCreated)(ThreadID threadID);
+    STDMETHOD(ThreadDestroyed)(ThreadID threadID);
+    STDMETHOD(ThreadAssignedToOSThread)(ThreadID managedThreadID, DWORD osThreadID);
+    STDMETHOD(RuntimeThreadSuspended)(ThreadID threadid);
+    STDMETHOD(RuntimeThreadResumed)(ThreadID threadid);
 
 	// callback functions
 	void Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo);

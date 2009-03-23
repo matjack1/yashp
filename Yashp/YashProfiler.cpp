@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include "YashProfiler.h"
 
+using namespace std;
+
 #pragma warning (disable: 4996) 
 
 #define ARRAY_SIZE(s) (sizeof(s) / sizeof(s[0]))
@@ -160,21 +162,8 @@ void CYashProfiler::MapFunction(FunctionID functionID)
 	std::map<FunctionID, CFunctionInfo*>::iterator iter = m_functionMap.find(functionID);
 	if (iter == m_functionMap.end())
 	{
-		// declared in this block so they are not created if the function is found
-		WCHAR szMethodName[NAME_BUFFER_SIZE];
-		const WCHAR* p = NULL;
-		USES_CONVERSION;
-
-		// get the method name
-		HRESULT hr = GetFullMethodName(functionID, szMethodName, NAME_BUFFER_SIZE); 
-		if (FAILED(hr))
-		{
-			// if we couldn't get the function name, then log it
-			LogString("Unable to find the name for %i\r\n", functionID);
-			return;
-		}
 		// add it to the map
-		functionInfo = new CFunctionInfo(functionID, W2A(szMethodName));
+		functionInfo = new CFunctionInfo(functionID);
 		m_functionMap.insert(std::pair<FunctionID, CFunctionInfo*>(functionID, functionInfo));
 	}
 }
@@ -192,7 +181,7 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		// get it from the map and update it
 		functionInfo = (iter->second);
 		// increment the call count
-		functionInfo->IncrementCallCount();
+		functionInfo->incrementCallCount();
 		// create the padding based on the call stack size
 		int padCharCount = m_callStackSize * 2;
 		if (padCharCount > 0)
@@ -201,13 +190,15 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			memset(padding, 0, padCharCount + 1);
 			memset(padding, ' ', padCharCount);
 			// log the function call
-			LogString("%s%s, id=%d, call count = %d\r\n", padding, functionInfo->GetName(), functionInfo->GetFunctionID(), functionInfo->GetCallCount());
+			if (strstr(functionInfo->getClassName().c_str(), "System") == NULL)
+				LogString("%s %s %s%s(%s), id=%d, call count = %d\r\n", padding, functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 			delete padding;
 		}
 		else
 		{
 			// log the function call
-			LogString("%s, id=%d, call count = %d\r\n", functionInfo->GetName(), functionInfo->GetFunctionID(), functionInfo->GetCallCount());
+			if (strstr(functionInfo->getClassName().c_str(), "System") == NULL)
+				LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 		}
 	}
 	else
@@ -238,6 +229,36 @@ void CYashProfiler::Tailcall(FunctionID functionID, UINT_PTR clientData, COR_PRF
 }
 
 // ----  ICorProfilerCallback IMPLEMENTATION ------------------
+
+STDMETHODIMP CYashProfiler::RuntimeThreadSuspended(ThreadID threadID)
+{
+	LogString("Thread %d Suspended...\r\n\r\n", threadID);
+    return S_OK;
+}
+
+STDMETHODIMP CYashProfiler::RuntimeThreadResumed(ThreadID threadID)
+{
+	LogString("Thread %d resumed...\r\n\r\n", threadID);
+    return S_OK;
+}
+
+STDMETHODIMP CYashProfiler::ThreadCreated(ThreadID threadID)
+{
+	LogString("Thread %d Created...\r\n\r\n", threadID);
+    return S_OK;
+}
+
+STDMETHODIMP CYashProfiler::ThreadDestroyed(ThreadID threadID)
+{
+	LogString("Thread %d Destroyed...\r\n\r\n", threadID);
+    return S_OK;
+}
+
+STDMETHODIMP CYashProfiler::ThreadAssignedToOSThread(ThreadID managedThreadID, DWORD osThreadID) 
+{
+	LogString("Thread %d Assigned to OS Thread...\r\n\r\n", managedThreadID);
+    return S_OK;
+}
 
 // called when the profiling object is created by the CLR
 STDMETHODIMP CYashProfiler::Initialize(IUnknown *pICorProfilerInfoUnk)
@@ -285,6 +306,8 @@ STDMETHODIMP CYashProfiler::Initialize(IUnknown *pICorProfilerInfoUnk)
 	else
 		LogString("Successfully initialized profiling\r\n\r\n" );
 
+	CFunctionInfo::setProfilerInfo(m_pICorProfilerInfo2);
+
     return S_OK;
 }
 
@@ -300,7 +323,8 @@ STDMETHODIMP CYashProfiler::Shutdown()
 	{
 		// log the function's info
 		CFunctionInfo* functionInfo = iter->second;
-		LogString("%s : call count = %d\r\n", functionInfo->GetName(), functionInfo->GetCallCount());
+		if (strstr(functionInfo->getFunctionName().c_str(), "System") == NULL)
+			LogString("%s : call count = %d\r\n", functionInfo->getFunctionName().c_str(), functionInfo->getCallCount());
 		// free the memory for the object
 		delete iter->second;
 	}
@@ -362,59 +386,10 @@ void CYashProfiler::LogString(char *pszFmtString, ...)
 	}
 }
 
-///<summary>
-// We are monitoring events that are interesting for determining
-// the hot spots of a managed CLR program (profilee). This includes
-// thread related events, function enter/leave events, exception 
-// related events, and unmanaged/managed transition events. Note 
-// that we disable inlining. Although this does indeed affect the 
-// execution time, it provides better accuracy for determining
-// hot spots.
-//
-// If the system does not support high precision counters, then
-// do not profile anything. This is determined in the constructor.
-///</summary>
 HRESULT CYashProfiler::SetEventMask()
 {
-	//COR_PRF_MONITOR_NONE	= 0,
-	//COR_PRF_MONITOR_FUNCTION_UNLOADS	= 0x1,
-	//COR_PRF_MONITOR_CLASS_LOADS	= 0x2,
-	//COR_PRF_MONITOR_MODULE_LOADS	= 0x4,
-	//COR_PRF_MONITOR_ASSEMBLY_LOADS	= 0x8,
-	//COR_PRF_MONITOR_APPDOMAIN_LOADS	= 0x10,
-	//COR_PRF_MONITOR_JIT_COMPILATION	= 0x20,
-	//COR_PRF_MONITOR_EXCEPTIONS	= 0x40,
-	//COR_PRF_MONITOR_GC	= 0x80,
-	//COR_PRF_MONITOR_OBJECT_ALLOCATED	= 0x100,
-	//COR_PRF_MONITOR_THREADS	= 0x200,
-	//COR_PRF_MONITOR_REMOTING	= 0x400,
-	//COR_PRF_MONITOR_CODE_TRANSITIONS	= 0x800,
-	//COR_PRF_MONITOR_ENTERLEAVE	= 0x1000,
-	//COR_PRF_MONITOR_CCW	= 0x2000,
-	//COR_PRF_MONITOR_REMOTING_COOKIE	= 0x4000 | COR_PRF_MONITOR_REMOTING,
-	//COR_PRF_MONITOR_REMOTING_ASYNC	= 0x8000 | COR_PRF_MONITOR_REMOTING,
-	//COR_PRF_MONITOR_SUSPENDS	= 0x10000,
-	//COR_PRF_MONITOR_CACHE_SEARCHES	= 0x20000,
-	//COR_PRF_MONITOR_CLR_EXCEPTIONS	= 0x1000000,
-	//COR_PRF_MONITOR_ALL	= 0x107ffff,
-	//COR_PRF_ENABLE_REJIT	= 0x40000,
-	//COR_PRF_ENABLE_INPROC_DEBUGGING	= 0x80000,
-	//COR_PRF_ENABLE_JIT_MAPS	= 0x100000,
-	//COR_PRF_DISABLE_INLINING	= 0x200000,
-	//COR_PRF_DISABLE_OPTIMIZATIONS	= 0x400000,
-	//COR_PRF_ENABLE_OBJECT_ALLOCATED	= 0x800000,
-	// New in VS2005
-	//	COR_PRF_ENABLE_FUNCTION_ARGS	= 0x2000000,
-	//	COR_PRF_ENABLE_FUNCTION_RETVAL	= 0x4000000,
-	//  COR_PRF_ENABLE_FRAME_INFO	= 0x8000000,
-	//  COR_PRF_ENABLE_STACK_SNAPSHOT	= 0x10000000,
-	//  COR_PRF_USE_PROFILE_IMAGES	= 0x20000000,
-	// End New in VS2005
-	//COR_PRF_ALL	= 0x3fffffff,
-	//COR_PRF_MONITOR_IMMUTABLE	= COR_PRF_MONITOR_CODE_TRANSITIONS | COR_PRF_MONITOR_REMOTING | COR_PRF_MONITOR_REMOTING_COOKIE | COR_PRF_MONITOR_REMOTING_ASYNC | COR_PRF_MONITOR_GC | COR_PRF_ENABLE_REJIT | COR_PRF_ENABLE_INPROC_DEBUGGING | COR_PRF_ENABLE_JIT_MAPS | COR_PRF_DISABLE_OPTIMIZATIONS | COR_PRF_DISABLE_INLINING | COR_PRF_ENABLE_OBJECT_ALLOCATED | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL | COR_PRF_ENABLE_FRAME_INFO | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_USE_PROFILE_IMAGES
-
 	// set the event mask 
-	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE);
+	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_MONITOR_THREADS | COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_DISABLE_INLINING);
 	return m_pICorProfilerInfo->SetEventMask(eventMask);
 }
 
