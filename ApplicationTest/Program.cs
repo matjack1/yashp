@@ -6,24 +6,31 @@ using System.Threading;
 
 namespace ApplicationTest
 {
-    class ThreadTest
+    class Test
     {
         static void Main()
         {
-            ThreadTest tr = new ThreadTest();
+            Test t = new Test();
 
-            Thread t = new Thread(WriteY);
-            t.Start();                          // Run WriteY on the new thread
-            for (int i = 0; i < 100; i++) tr.WriteX();   // Write 'x' forever
+            for (int i=0; i<10; i++)
+                t.setX(10);
+
+            Test t2 = new Test();
+
+            for (int i = 0; i < 10; i++)
+            {
+                t2.setX(10);
+            }
         }
 
-        void WriteX() {
-            Console.Write("x");
+        void setX(int x) {
+            this.x = x;
         }
 
-        static void WriteY()
-        {
-            for (int i = 0; i < 100; i++) Console.Write("y");   // Write 'y' forever
+        int getX() {
+            return this.x;
         }
+
+        private int x;
     }
 }

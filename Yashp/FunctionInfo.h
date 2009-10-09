@@ -32,6 +32,8 @@ public:
 	inline std::string getParameters() { return m_sParameters; }
 	inline std::string getReturnType() { return m_sReturnType; }
 
+	bool isFiltered(COR_PRF_FRAME_INFO frameInfo);
+
 	FunctionID getFunctionID();
 	long getCallCount();
 

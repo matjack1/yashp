@@ -173,6 +173,7 @@ void CYashProfiler::MapFunction(FunctionID functionID)
 // our real handler for FunctionEnter notification
 void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo)
 {
+
 	// see if this function is in the map.  It should be since we are using the funciton mapper
 	CFunctionInfo* functionInfo = NULL;
 	std::map<FunctionID, CFunctionInfo*>::iterator iter = m_functionMap.find(functionID);
@@ -190,14 +191,13 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			memset(padding, 0, padCharCount + 1);
 			memset(padding, ' ', padCharCount);
 			// log the function call
-			if (strstr(functionInfo->getClassName().c_str(), "System") == NULL)
+			if (functionInfo->isFiltered(frameInfo))
 				LogString("%s %s %s%s(%s), id=%d, call count = %d\r\n", padding, functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 			delete padding;
 		}
 		else
 		{
 			// log the function call
-			if (strstr(functionInfo->getClassName().c_str(), "System") == NULL)
 				LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 		}
 	}
@@ -273,6 +273,7 @@ STDMETHODIMP CYashProfiler::Initialize(IUnknown *pICorProfilerInfoUnk)
     HRESULT hr = pICorProfilerInfoUnk->QueryInterface(IID_ICorProfilerInfo, (LPVOID*)&m_pICorProfilerInfo);
     if (FAILED(hr))
         return E_FAIL;
+
 	// determine if this object implements ICorProfilerInfo2
     hr = pICorProfilerInfoUnk->QueryInterface(IID_ICorProfilerInfo2, (LPVOID*)&m_pICorProfilerInfo2);
     if (FAILED(hr))
@@ -389,44 +390,9 @@ void CYashProfiler::LogString(char *pszFmtString, ...)
 HRESULT CYashProfiler::SetEventMask()
 {
 	// set the event mask 
-	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_MONITOR_THREADS | COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_DISABLE_INLINING);
+	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_MONITOR_THREADS | COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_DISABLE_INLINING | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL );
 	return m_pICorProfilerInfo->SetEventMask(eventMask);
 }
 
-// creates the fully scoped name of the method in the provided buffer
-HRESULT CYashProfiler::GetFullMethodName(FunctionID functionID, LPWSTR wszMethod, int cMethod)
-{
-	IMetaDataImport* pIMetaDataImport = 0;
-	HRESULT hr = S_OK;
-	mdToken funcToken = 0;
-	WCHAR szFunction[NAME_BUFFER_SIZE];
-	WCHAR szClass[NAME_BUFFER_SIZE];
-
-	// get the token for the function which we will use to get its name
-	hr = m_pICorProfilerInfo->GetTokenAndMetaDataFromFunction(functionID, IID_IMetaDataImport, (LPUNKNOWN *) &pIMetaDataImport, &funcToken);
-	if(SUCCEEDED(hr))
-	{
-		mdTypeDef classTypeDef;
-		ULONG cchFunction;
-		ULONG cchClass;
-
-		// retrieve the function properties based on the token
-		hr = pIMetaDataImport->GetMethodProps(funcToken, &classTypeDef, szFunction, NAME_BUFFER_SIZE, &cchFunction, 0, 0, 0, 0, 0);
-		if (SUCCEEDED(hr))
-		{
-			// get the function name
-			hr = pIMetaDataImport->GetTypeDefProps(classTypeDef, szClass, NAME_BUFFER_SIZE, &cchClass, 0, 0);
-			if (SUCCEEDED(hr))
-			{
-				// create the fully qualified name
-				_snwprintf_s(wszMethod,cMethod,cMethod,L"%s.%s",szClass,szFunction);
-			}
-		}
-		// release our reference to the metadata
-		pIMetaDataImport->Release();
-	}
-
-	return hr;
-}
 // CYashProfiler
 

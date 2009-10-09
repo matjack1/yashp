@@ -74,10 +74,9 @@ private:
 	HANDLE m_hLogFile;
 	TCHAR m_logFileName[_MAX_PATH]; 
 
-	// gets the full method name given a function ID
-	HRESULT GetFullMethodName(FunctionID functionId, LPWSTR wszMethod, int cMethod );
 	// function to set up our event mask
 	HRESULT SetEventMask();
+
 	// creates the log file
 	void CreateLogFile();
 	// closes the log file ;)
