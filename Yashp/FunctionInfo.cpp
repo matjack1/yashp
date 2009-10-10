@@ -75,7 +75,7 @@ void CFunctionInfo::fillSignature() {
 	m_sFunctionName = CW2A( functionNameString );
 }
 
-bool CFunctionInfo::isFiltered(COR_PRF_FRAME_INFO frameInfo) {
+bool CFunctionInfo::isFiltered(COR_PRF_FRAME_INFO frameInfo, wchar_t *appPath) {
 
 	ClassID classId = 0;
 	ModuleID moduleId = 0;
@@ -109,26 +109,12 @@ bool CFunctionInfo::isFiltered(COR_PRF_FRAME_INFO frameInfo) {
 			&assemblyID
 		);
 
-
-/*
-	m_szAppPath[0]=0x00;
-	m_szAppName[0]=0x00;
-    if (0 == GetModuleFileNameW (NULL, m_szAppPath, MAX_PATH))
-	    _wsplitpath_s (m_szAppPath, NULL,0, NULL,0, m_szAppName,_MAX_FNAME, NULL, 0);
-
-	if(m_szAppPath[0]==0x00)
-	{
-		wcscpy_s(m_szAppPath,MAX_PATH,L"No Application Path Found");
-		wcscpy_s(m_szAppName,_MAX_FNAME,L"No Application Name Found");
-	}
-*/
 		if(SUCCEEDED(hr)) {
 			// if this didn't originate from our module, we don't care
 			// so we don't see all of the CLR calls going on (and there 
 			// are a ton of them which is why we are doing this!)
-			//if(wcsicmp(szName, sm_szAppPath)==0)
-			//	return false;
-			return true;
+			if(wcsicmp(szName, appPath)!=0)
+				return false;
 		}
 	}
 	return true;

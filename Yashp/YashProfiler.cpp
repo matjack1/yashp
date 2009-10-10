@@ -3,6 +3,34 @@
 #include "stdafx.h"
 #include "YashProfiler.h"
 
+void FunctionTailcallNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func);
+void FunctionLeaveNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange);
+void FunctionEnterNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo);
+
+std::string wstrtostr(const std::wstring &wstr)
+{
+    // Convert a Unicode string to an ASCII string
+    std::string strTo;
+    char *szTo = new char[wstr.length() + 1];
+    szTo[wstr.size()] = '\0';
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, szTo, (int)wstr.length(), NULL, NULL);
+    strTo = szTo;
+    delete[] szTo;
+    return strTo;
+}
+
+std::wstring strtowstr(const std::string &str)
+{
+    // Convert an ASCII string to a Unicode String
+    std::wstring wstrTo;
+    wchar_t *wszTo = new wchar_t[str.length() + 1];
+    wszTo[str.size()] = L'\0';
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, wszTo, (int)str.length());
+    wstrTo = wszTo;
+    delete[] wszTo;
+    return wstrTo;
+}
+
 using namespace std;
 
 #pragma warning (disable: 4996) 
@@ -39,109 +67,6 @@ void CYashProfiler::FinalRelease()
 	CloseLogFile();
 }
 
-// ----  CALLBACK FUNCTIONS ------------------
-
-// this function simply forwards the FunctionEnter call the global profiler object
-void __stdcall FunctionEnterGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argInfo)
-{
-	// make sure the global reference to our profiler is valid
-    if (g_pICorProfilerCallback != NULL)
-        g_pICorProfilerCallback->Enter(functionID, clientData, frameInfo, argInfo);
-}
-
-// this function is called by the CLR when a function has been entered
-void _declspec(naked) FunctionEnterNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo)
-{
-    __asm
-    {
-        push    ebp                 // Create a standard frame
-        mov     ebp,esp
-        pushad                      // Preserve all registers
-
-        mov     eax,[ebp+0x14]      // argumentInfo
-        push    eax
-        mov     ecx,[ebp+0x10]      // func
-        push    ecx
-        mov     edx,[ebp+0x0C]      // clientData
-        push    edx
-        mov     eax,[ebp+0x08]      // functionID
-        push    eax
-        call    FunctionEnterGlobal
-
-        popad                       // Restore all registers
-        pop     ebp                 // Restore EBP
-        ret     16
-    }
-}
-
-// this function simply forwards the FunctionLeave call the global profiler object
-void __stdcall FunctionLeaveGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange)
-{
-	// make sure the global reference to our profiler is valid
-    if (g_pICorProfilerCallback != NULL)
-        g_pICorProfilerCallback->Leave(functionID,clientData,frameInfo,retvalRange);
-}
-
-// this function is called by the CLR when a function is exiting
-void _declspec(naked) FunctionLeaveNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange)
-{
-    __asm
-    {
-        push    ebp                 // Create a standard frame
-        mov     ebp,esp
-        pushad                      // Preserve all registers
-
-        mov     eax,[ebp+0x14]      // argumentInfo
-        push    eax
-        mov     ecx,[ebp+0x10]      // func
-        push    ecx
-        mov     edx,[ebp+0x0C]      // clientData
-        push    edx
-        mov     eax,[ebp+0x08]      // functionID
-        push    eax
-        call    FunctionLeaveGlobal
-
-        popad                       // Restore all registers
-        pop     ebp                 // Restore EBP
-        ret     16
-    }
-}
-
-// this function simply forwards the FunctionLeave call the global profiler object
-void __stdcall FunctionTailcallGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo)
-{
-    if (g_pICorProfilerCallback != NULL)
-        g_pICorProfilerCallback->Tailcall(functionID,clientData,frameInfo);
-}
-
-// this function is called by the CLR when a tailcall occurs.  A tailcall occurs when the 
-// last action of a method is a call to another method.
-void _declspec(naked) FunctionTailcallNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func)
-{
-    __asm
-    {
-        push    ebp                 // Create a standard frame
-        mov     ebp,esp
-        pushad                      // Preserve all registers
-
-        mov     eax,[ebp+0x14]      // argumentInfo
-        push    eax
-        mov     ecx,[ebp+0x10]      // func
-        push    ecx
-        mov     edx,[ebp+0x0C]      // clientData
-        push    edx
-        mov     eax,[ebp+0x08]      // functionID
-        push    eax
-        call    FunctionTailcallGlobal
-
-        popad                       // Restore all registers
-        pop     ebp                 // Restore EBP
-        ret     16
-    }
-}
-
-// ----  MAPPING FUNCTIONS ------------------
-
 // this function is called by the CLR when a function has been mapped to an ID
 UINT_PTR CYashProfiler::FunctionMapper(FunctionID functionID, BOOL *pbHookFunction)
 {
@@ -173,7 +98,6 @@ void CYashProfiler::MapFunction(FunctionID functionID)
 // our real handler for FunctionEnter notification
 void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo)
 {
-
 	// see if this function is in the map.  It should be since we are using the funciton mapper
 	CFunctionInfo* functionInfo = NULL;
 	std::map<FunctionID, CFunctionInfo*>::iterator iter = m_functionMap.find(functionID);
@@ -183,6 +107,7 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		functionInfo = (iter->second);
 		// increment the call count
 		functionInfo->incrementCallCount();
+
 		// create the padding based on the call stack size
 		int padCharCount = m_callStackSize * 2;
 		if (padCharCount > 0)
@@ -190,16 +115,29 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			char* padding = new char[(padCharCount) + 1];
 			memset(padding, 0, padCharCount + 1);
 			memset(padding, ' ', padCharCount);
+
 			// log the function call
-			if (functionInfo->isFiltered(frameInfo))
+			if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
 				LogString("%s %s %s%s(%s), id=%d, call count = %d\r\n", padding, functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
+			}
 			delete padding;
 		}
 		else
 		{
 			// log the function call
-				LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
+			LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 		}
+
+		/*
+		for (UINT i=0; i < argumentInfo->numRanges; i++) {
+			//Assume some max string size                 
+			ObjectID stringOID;
+			//Assume objectOfInterestPosition as the position of the argument of interest
+			memcpy(&stringOID, ((const void *)(argumentInfo->ranges[0].startAddress)), argumentInfo->ranges[0].length);
+			//LogString("%x", stringOID);
+		}
+		*/
+
 	}
 	else
 	{
@@ -263,16 +201,23 @@ STDMETHODIMP CYashProfiler::ThreadAssignedToOSThread(ThreadID managedThreadID, D
 // called when the profiling object is created by the CLR
 STDMETHODIMP CYashProfiler::Initialize(IUnknown *pICorProfilerInfoUnk)
 {
-	// set up our global access pointer
-	g_pICorProfilerCallback = this;
-
 	// log that we are initializing
 	LogString("Initializing...\r\n\r\n");
 
+	// set up our global access pointer
+	g_pICorProfilerCallback = this;
+
+
+	m_szAppPath = new wchar_t[MAX_PATH];
+	m_szAppPath[0]=0x00;
+	GetModuleFileNameW(NULL, m_szAppPath, MAX_PATH);
+	LogString("App Path: %ls\r\n", m_szAppPath);
+
 	// get the ICorProfilerInfo interface
     HRESULT hr = pICorProfilerInfoUnk->QueryInterface(IID_ICorProfilerInfo, (LPVOID*)&m_pICorProfilerInfo);
-    if (FAILED(hr))
+	if (FAILED(hr)) {
         return E_FAIL;
+	}
 
 	// determine if this object implements ICorProfilerInfo2
     hr = pICorProfilerInfoUnk->QueryInterface(IID_ICorProfilerInfo2, (LPVOID*)&m_pICorProfilerInfo2);
@@ -396,3 +341,106 @@ HRESULT CYashProfiler::SetEventMask()
 
 // CYashProfiler
 
+
+
+
+// ----  CALLBACK FUNCTIONS ------------------
+
+// this function simply forwards the FunctionEnter call the global profiler object
+void __stdcall FunctionEnterGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argInfo)
+{
+	// make sure the global reference to our profiler is valid
+    if (g_pICorProfilerCallback != NULL)
+        g_pICorProfilerCallback->Enter(functionID, clientData, frameInfo, argInfo);
+}
+
+// this function is called by the CLR when a function has been entered
+void _declspec(naked) FunctionEnterNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo)
+{
+    __asm
+    {
+        push    ebp                 // Create a standard frame
+        mov     ebp,esp
+        pushad                      // Preserve all registers
+
+        mov     eax,[ebp+0x14]      // argumentInfo
+        push    eax
+        mov     ecx,[ebp+0x10]      // func
+        push    ecx
+        mov     edx,[ebp+0x0C]      // clientData
+        push    edx
+        mov     eax,[ebp+0x08]      // functionID
+        push    eax
+        call    FunctionEnterGlobal
+
+        popad                       // Restore all registers
+        pop     ebp                 // Restore EBP
+        ret     16
+    }
+}
+
+// this function simply forwards the FunctionLeave call the global profiler object
+void __stdcall FunctionLeaveGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange)
+{
+	// make sure the global reference to our profiler is valid
+    if (g_pICorProfilerCallback != NULL)
+        g_pICorProfilerCallback->Leave(functionID,clientData,frameInfo,retvalRange);
+}
+
+// this function is called by the CLR when a function is exiting
+void _declspec(naked) FunctionLeaveNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange)
+{
+    __asm
+    {
+        push    ebp                 // Create a standard frame
+        mov     ebp,esp
+        pushad                      // Preserve all registers
+
+        mov     eax,[ebp+0x14]      // argumentInfo
+        push    eax
+        mov     ecx,[ebp+0x10]      // func
+        push    ecx
+        mov     edx,[ebp+0x0C]      // clientData
+        push    edx
+        mov     eax,[ebp+0x08]      // functionID
+        push    eax
+        call    FunctionLeaveGlobal
+
+        popad                       // Restore all registers
+        pop     ebp                 // Restore EBP
+        ret     16
+    }
+}
+
+// this function simply forwards the FunctionLeave call the global profiler object
+void __stdcall FunctionTailcallGlobal(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo)
+{
+    if (g_pICorProfilerCallback != NULL)
+        g_pICorProfilerCallback->Tailcall(functionID,clientData,frameInfo);
+}
+
+// this function is called by the CLR when a tailcall occurs.  A tailcall occurs when the 
+// last action of a method is a call to another method.
+void _declspec(naked) FunctionTailcallNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func)
+{
+    __asm
+    {
+        push    ebp                 // Create a standard frame
+        mov     ebp,esp
+        pushad                      // Preserve all registers
+
+        mov     eax,[ebp+0x14]      // argumentInfo
+        push    eax
+        mov     ecx,[ebp+0x10]      // func
+        push    ecx
+        mov     edx,[ebp+0x0C]      // clientData
+        push    edx
+        mov     eax,[ebp+0x08]      // functionID
+        push    eax
+        call    FunctionTailcallGlobal
+
+        popad                       // Restore all registers
+        pop     ebp                 // Restore EBP
+        ret     16
+    }
+}

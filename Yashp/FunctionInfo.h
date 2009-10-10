@@ -32,7 +32,7 @@ public:
 	inline std::string getParameters() { return m_sParameters; }
 	inline std::string getReturnType() { return m_sReturnType; }
 
-	bool isFiltered(COR_PRF_FRAME_INFO frameInfo);
+	bool isFiltered(COR_PRF_FRAME_INFO frameInfo, wchar_t *appPath);
 
 	FunctionID getFunctionID();
 	long getCallCount();
@@ -56,5 +56,4 @@ private:
 	std::string m_sClassName;
 	std::string m_sFunctionName;
 	UINT32 m_iMethodAttributes;
-
 };

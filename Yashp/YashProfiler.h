@@ -16,8 +16,6 @@
 #error "Single-threaded COM objects are not properly supported on Windows CE platform, such as the Windows Mobile platforms that do not include full DCOM support. Define _CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA to force ATL to support creating single-thread COM object's and allow use of it's single-threaded COM object implementations. The threading model in your rgs file was set to 'Free' as that is the only threading model supported in non DCOM Windows CE platforms."
 #endif
 
-
-
 // CYashProfiler
 
 class ATL_NO_VTABLE CYashProfiler :
@@ -81,6 +79,9 @@ private:
 	void CreateLogFile();
 	// closes the log file ;)
 	void CloseLogFile();
+
+	wchar_t *m_szAppPath;
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(YashProfiler), CYashProfiler)
