@@ -1,4 +1,4 @@
-﻿namespace Demo
+﻿namespace Drawer
 {
     partial class Form1
     {
@@ -28,31 +28,31 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.umlGraph = new Demo.UMLGraph();
+            this.umlDrawer1 = new Drawer.UMLDrawer();
             this.SuspendLayout();
             // 
-            // umlGraph
+            // umlDrawer1
             // 
-            this.umlGraph.Location = new System.Drawing.Point(12, 12);
-            this.umlGraph.Name = "umlGraph";
-            this.umlGraph.Size = new System.Drawing.Size(823, 588);
-            this.umlGraph.TabIndex = 0;
+            this.umlDrawer1.Location = new System.Drawing.Point(12, 12);
+            this.umlDrawer1.Name = "umlDrawer1";
+            this.umlDrawer1.Size = new System.Drawing.Size(654, 537);
+            this.umlDrawer1.TabIndex = 0;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(847, 612);
-            this.Controls.Add(this.umlGraph);
+            this.ClientSize = new System.Drawing.Size(679, 557);
+            this.Controls.Add(this.umlDrawer1);
             this.Name = "Form1";
-            this.Text = "Form1";
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private UMLGraph umlGraph;
+        private UMLDrawer umlDrawer1;
+
     }
 }
 

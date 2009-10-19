@@ -6,7 +6,6 @@ using System.Collections;
 
 namespace Demo
 {
-
     class MethodInfo
     {
         private String _className;
@@ -38,7 +37,13 @@ namespace Demo
 
     class LogEvent
     {
-        private DateTime timestamp;
+        private DateTime _timestamp;
+
+        public DateTime timestamp
+        {
+            get { return _timestamp; }
+            set { _timestamp = value; }
+        }
     }
 
     class MethodEvent : LogEvent
@@ -46,8 +51,8 @@ namespace Demo
         public enum EventTypeEnum
         {
             EnterEvent = 0x01,
-            Leave = 0x02,
-            TailCall = 0x04,
+            LeaveEvent = 0x02,
+            TailCallEvent = 0x04,
         }
 
         private EventTypeEnum _eventType;
