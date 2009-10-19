@@ -122,21 +122,22 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			}
 			delete padding;
 		}
-		else
+		else 
 		{
 			// log the function call
 			LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 		}
 
-		/*
-		for (UINT i=0; i < argumentInfo->numRanges; i++) {
-			//Assume some max string size                 
-			ObjectID stringOID;
-			//Assume objectOfInterestPosition as the position of the argument of interest
-			memcpy(&stringOID, ((const void *)(argumentInfo->ranges[0].startAddress)), argumentInfo->ranges[0].length);
-			//LogString("%x", stringOID);
+		if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
+			for (UINT i=0; i < argumentInfo->numRanges; i++) {
+				//Assume some max string size                 
+				ObjectID stringOID;
+				//Assume objectOfInterestPosition as the position of the argument of interest
+				memcpy(&stringOID, ((const void *)(argumentInfo->ranges[0].startAddress)), argumentInfo->ranges[0].length);
+				LogString("%x\r\n", stringOID);
+			}
 		}
-		*/
+		
 
 	}
 	else
