@@ -11,6 +11,7 @@ namespace ApplicationTest
         static void Main()
         {
             Test t = new Test();
+            Test2 fantasy = new Test2();
 
             for (int i=0; i<10; i++)
                 t.setX(10);
@@ -21,6 +22,9 @@ namespace ApplicationTest
             {
                 t2.setX(10);
             }
+
+            Test2.sumInt(2, 4);
+            fantasy.almostSum(2, 4);
         }
 
         void setX(int x) {
@@ -32,5 +36,18 @@ namespace ApplicationTest
         }
 
         private int x;
+    }
+
+    class Test2
+    {
+        public static int sumInt(int x, int y)
+        {
+            return x + y;
+        }
+
+        public int almostSum(int x, int y)
+        {
+            return x + y + 4;
+        }
     }
 }
