@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="Yashp"
 	ProjectGUID="{8A80E2D0-F791-47EF-AD80-C3B0D2221EEC}"
 	RootNamespace="Yashp"
@@ -271,6 +271,26 @@
 				RelativePath=".\YashProfiler.cpp"
 				>
 			</File>
+			<Filter
+				Name="tinyxml"
+				>
+				<File
+					RelativePath=".\tinyxml\tinystr.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tinyxml\tinyxml.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tinyxml\tinyxmlerror.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tinyxml\tinyxmlparser.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -305,6 +325,18 @@
 				RelativePath=".\YashProfiler.h"
 				>
 			</File>
+			<Filter
+				Name="tinyxml"
+				>
+				<File
+					RelativePath=".\tinyxml\tinystr.h"
+					>
+				</File>
+				<File
+					RelativePath=".\tinyxml\tinyxml.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

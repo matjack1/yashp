@@ -9,6 +9,7 @@
 #include "resource.h"
 #include "FunctionInfo.h"
 #include <map>
+#include "tinyxml/tinyxml.h"
 
 #define NAME_BUFFER_SIZE 1024
 
@@ -46,6 +47,7 @@ CYashProfiler();
     STDMETHOD(ThreadAssignedToOSThread)(ThreadID managedThreadID, DWORD osThreadID);
     STDMETHOD(RuntimeThreadSuspended)(ThreadID threadid);
     STDMETHOD(RuntimeThreadResumed)(ThreadID threadid);
+	STDMETHOD(ExceptionThrown)(ObjectID thrownObjectID);
 
 	// callback functions
 	void Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo);
@@ -81,7 +83,11 @@ private:
 	void CloseLogFile();
 
 	wchar_t *m_szAppPath;
-
+	
+	// TinyXml structure
+	TiXmlDocument m_doc;
+	TiXmlElement *m_events;
+	TiXmlElement *m_functionInfos;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(YashProfiler), CYashProfiler)

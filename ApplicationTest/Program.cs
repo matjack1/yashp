@@ -25,6 +25,14 @@ namespace ApplicationTest
 
             Test2.sumInt(2, 4);
             fantasy.almostSum(2, 4);
+            try
+            {
+                throw new Exception("TEST");
+            }
+            catch
+            {
+
+            }
         }
 
         void setX(int x) {
@@ -47,6 +55,7 @@ namespace ApplicationTest
 
         public int almostSum(int x, int y)
         {
+            Test2.sumInt(3, 5);
             return x + y + 4;
         }
     }

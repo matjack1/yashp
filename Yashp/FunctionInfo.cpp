@@ -16,6 +16,7 @@
 
 #include "StdAfx.h"
 #include "FunctionInfo.h"
+#include <sstream>
 
 using namespace std;
 const int MAX_FUNCTION_LENGTH=2048;
@@ -162,6 +163,10 @@ HRESULT CFunctionInfo::fillSignatureImpl(
 		return S_OK;
 	}
 	
+	std::stringstream out;
+	out << moduleID;
+	m_classID = out.str();
+
 	// Get the MetadataImport interface and the metadata token 
 	hr = m_profilerInfo->GetTokenAndMetaDataFromFunction( m_functionID, 
        								 				IID_IMetaDataImport, 
@@ -252,6 +257,8 @@ HRESULT CFunctionInfo::fillSignatureImpl(
 		
 		// Grab the argument count
 		sigBlob += CorSigUncompressData( sigBlob, argCount );
+
+		m_argCount = (int) (*argCount);
 
 		// Get the return type
 		sigBlob = parseElementType( metaDataImport, sigBlob, buffer );

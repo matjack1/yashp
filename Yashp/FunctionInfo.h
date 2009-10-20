@@ -31,6 +31,13 @@ public:
 	inline std::string getClassName() { return m_sClassName; }
 	inline std::string getParameters() { return m_sParameters; }
 	inline std::string getReturnType() { return m_sReturnType; }
+	inline std::string getClassID() { return m_classID; }
+	inline std::string getStaticMethod() { return m_staticMethod; }
+	inline int getArgCount() { return m_argCount; }
+	inline long int getInstanceAddr() { return m_instanceAddr; }
+
+	inline void setStaticMethod(std::string isStatic) { m_staticMethod = isStatic; }
+	inline void setInstanceAddr(long int in_addr) { m_instanceAddr = in_addr; }
 
 	bool isFiltered(COR_PRF_FRAME_INFO frameInfo, wchar_t *appPath);
 
@@ -55,5 +62,9 @@ private:
 	std::string m_sParameters;
 	std::string m_sClassName;
 	std::string m_sFunctionName;
+	std::string m_classID;
+	std::string m_staticMethod;
+	int m_argCount;
+	long int m_instanceAddr;
 	UINT32 m_iMethodAttributes;
 };

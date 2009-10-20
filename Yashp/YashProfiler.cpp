@@ -2,6 +2,8 @@
 
 #include "stdafx.h"
 #include "YashProfiler.h"
+#include <time.h>
+#include <sstream>
 
 void FunctionTailcallNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func);
 void FunctionLeaveNaked(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO func, COR_PRF_FUNCTION_ARGUMENT_RANGE *retvalRange);
@@ -45,6 +47,14 @@ CYashProfiler::CYashProfiler()
 {
 	m_hLogFile = INVALID_HANDLE_VALUE;
 	m_callStackSize = 0;
+
+	// init the XML file
+	TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
+	m_doc.LinkEndChild( decl );
+	m_functionInfos = new TiXmlElement( "functionInfos" );
+	m_events = new TiXmlElement( "events" );
+	m_doc.LinkEndChild( m_functionInfos );
+	m_doc.LinkEndChild( m_events );
 }
 
 HRESULT CYashProfiler::FinalConstruct()
@@ -128,17 +138,26 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			LogString("%s %s%s(%s), id=%d, call count = %d\r\n", functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 		}
 
+		ObjectID stringOID, instanceID = 0;
 		if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
 			for (UINT i=0; i < argumentInfo->numRanges; i++) {
-				//Assume some max string size                 
-				ObjectID stringOID;
-				//Assume objectOfInterestPosition as the position of the argument of interest
-				memcpy(&stringOID, ((const void *)(argumentInfo->ranges[0].startAddress)), argumentInfo->ranges[0].length);
-				LogString("%x\r\n", stringOID);
+				memcpy(&stringOID, ((const void *)(argumentInfo->ranges[i].startAddress)), argumentInfo->ranges[i].length);
+
+				LogString("Argument %d: %x\r\n", i, stringOID);
+				if(i == 0)
+					instanceID = stringOID;
+			}
+
+			// set if the method is static
+			if ( (int) argumentInfo->numRanges == functionInfo->getArgCount() ) {
+				functionInfo->setStaticMethod(std::string("true"));
+				functionInfo->setInstanceAddr((long int) 0);
+			}
+			else {
+				functionInfo->setStaticMethod(std::string("false"));
+				functionInfo->setInstanceAddr((long int) instanceID);
 			}
 		}
-		
-
 	}
 	else
 	{
@@ -149,14 +168,70 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 	// increment the call stack size (we must do this even if we don't find the 
 	// function in the map
 	m_callStackSize++;
+
+	ThreadID threadId;
+	m_pICorProfilerInfo->GetCurrentThreadID(&threadId);
+	std::stringstream threadStr;
+	threadStr << threadId;
+	
+	if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
+		// add to XML
+		TiXmlElement * methodEvent = new TiXmlElement( "methodEvent" );
+		methodEvent->SetAttribute("functionId", functionInfo->getFunctionID());
+		methodEvent->SetAttribute("objectId", functionInfo->getInstanceAddr());
+		methodEvent->SetAttribute("threadId", threadStr.str().c_str());
+		methodEvent->SetAttribute("type", "Enter");
+		char *timestamp = new char(256);
+		sprintf(timestamp, "%ld", clock());
+		methodEvent->SetAttribute("timestamp", timestamp);
+		char *stackDepth = new char(256);
+		sprintf(stackDepth, "%d", m_callStackSize);
+		methodEvent->SetAttribute("stackDepth", stackDepth);
+		m_events->LinkEndChild( methodEvent );  
+	}
 }
 
 // our real handler for FunctionLeave notification
 void CYashProfiler::Leave(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_RANGE *argumentRange)
 {
+	// see if this function is in the map.  It should be since we are using the funciton mapper
+	CFunctionInfo* functionInfo = NULL;
+	std::map<FunctionID, CFunctionInfo*>::iterator iter = m_functionMap.find(functionID);
+	if (iter != m_functionMap.end())
+	{
+		// get it from the map
+		functionInfo = (iter->second);
+	}
+	else
+	{
+		// log an error (this shouldn't happen because we're caching the functions
+		// in the function mapping callback
+		LogString("Error finding function ID %d in the map.\r\n", (int)functionID);
+	}
 	// decrement the call stack size
 	if (m_callStackSize > 0)
 		m_callStackSize--;
+
+	ThreadID threadId;
+	m_pICorProfilerInfo->GetCurrentThreadID(&threadId);
+	std::stringstream threadStr;
+	threadStr << threadId;
+	
+	if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
+		// add to XML
+		TiXmlElement * methodEvent = new TiXmlElement( "methodEvent" );
+		methodEvent->SetAttribute("functionId", functionInfo->getFunctionID());
+		methodEvent->SetAttribute("objectId", functionInfo->getInstanceAddr());
+		methodEvent->SetAttribute("threadId", threadStr.str().c_str());
+		methodEvent->SetAttribute("type", "Leave");
+		char *timestamp = new char(256);
+		sprintf(timestamp, "%ld", clock());
+		methodEvent->SetAttribute("timestamp", timestamp);
+		char *stackDepth = new char(256);
+		sprintf(stackDepth, "%d", m_callStackSize);
+		methodEvent->SetAttribute("stackDepth", stackDepth);
+		m_events->LinkEndChild( methodEvent );  
+	}
 }
 
 // our real handler for the FunctionTailcall notification
@@ -165,6 +240,8 @@ void CYashProfiler::Tailcall(FunctionID functionID, UINT_PTR clientData, COR_PRF
 	// decrement the call stack size
 	if (m_callStackSize > 0)
 		m_callStackSize--;
+
+	LogString("TAILCALL\r\n");
 }
 
 // ----  ICorProfilerCallback IMPLEMENTATION ------------------
@@ -197,6 +274,30 @@ STDMETHODIMP CYashProfiler::ThreadAssignedToOSThread(ThreadID managedThreadID, D
 {
 	LogString("Thread %d Assigned to OS Thread...\r\n\r\n", managedThreadID);
     return S_OK;
+}
+
+STDMETHODIMP CYashProfiler::ExceptionThrown(ObjectID thrownObjectID)
+{
+    LogString("Exception %d Thrown\r\n\r\n", thrownObjectID);
+
+	ThreadID threadId;
+	m_pICorProfilerInfo->GetCurrentThreadID(&threadId);
+	std::stringstream threadStr;
+	threadStr << threadId;
+	
+	// add to XML
+	TiXmlElement * methodEvent = new TiXmlElement( "methodEvent" );
+	char *exceptionId = new char(256);
+	sprintf(exceptionId, "%d", thrownObjectID);
+	methodEvent->SetAttribute("exceptionId", exceptionId);
+	methodEvent->SetAttribute("threadId", threadStr.str().c_str());
+	methodEvent->SetAttribute("type", "ExceptionThrown");
+	char *timestamp = new char(256);
+	sprintf(timestamp, "%ld", clock());
+	methodEvent->SetAttribute("timestamp", timestamp);
+	m_events->LinkEndChild( methodEvent );  
+
+	return S_OK;
 }
 
 // called when the profiling object is created by the CLR
@@ -270,11 +371,22 @@ STDMETHODIMP CYashProfiler::Shutdown()
 	{
 		// log the function's info
 		CFunctionInfo* functionInfo = iter->second;
-		if (strstr(functionInfo->getFunctionName().c_str(), "System") == NULL)
+		if (strstr(functionInfo->getClassName().c_str(), "System") == NULL) {
 			LogString("%s : call count = %d\r\n", functionInfo->getFunctionName().c_str(), functionInfo->getCallCount());
+			TiXmlElement *functionElement = new TiXmlElement("functionInfo");
+			functionElement->SetAttribute("functionId", functionInfo->getFunctionID());
+			functionElement->SetAttribute("className", functionInfo->getClassName().c_str());
+			functionElement->SetAttribute("methodName", functionInfo->getFunctionName().c_str());
+			functionElement->SetAttribute("static", functionInfo->getStaticMethod().c_str());
+			functionElement->SetAttribute("returnType", functionInfo->getReturnType().c_str());
+			m_functionInfos->LinkEndChild( functionElement );
+		}
 		// free the memory for the object
 		delete iter->second;
 	}
+	// write the XML file
+	m_doc.SaveFile( "YashpOutput.xml" );
+
 	// clear the map
 	m_functionMap.clear();
 
