@@ -10,9 +10,15 @@ namespace Demo
     {
         private String _className;
         private String _methodName;
-        private ArrayList _argumentsInfos;
-        private int _functionID;
+        private String _returnType;
+        private String _functionID;
+        private bool _isStatic;
 
+        public bool IsStatic
+        {
+            get { return _isStatic; }
+            set { _isStatic = value; }
+        }
         public String ClassName
         {
             get { return _className; }
@@ -23,12 +29,12 @@ namespace Demo
             get { return _methodName; }
             set { _methodName = value; }
         }
-        public ArrayList ArgumentsInfos
+        public String ReturnType
         {
-            get { return _argumentsInfos; }
-            set { _argumentsInfos = value; }
+            get { return _returnType; }
+            set { _returnType = value; }
         }
-        public int FunctionID
+        public String FunctionID
         {
             get { return _functionID; }
             set { _functionID = value; }
@@ -37,9 +43,9 @@ namespace Demo
 
     class LogEvent
     {
-        private DateTime _timestamp;
+        private double _timestamp;
 
-        public DateTime timestamp
+        public double timestamp
         {
             get { return _timestamp; }
             set { _timestamp = value; }
@@ -57,13 +63,13 @@ namespace Demo
 
         private EventTypeEnum _eventType;
         private MethodInfo _methodInfo;
-        private bool _isStatic;
-        private ArrayList _argumentsObjectID;
-        private int _instanceObjectID;
+        private String _instanceObjectID;
+        private String _threadID;
 
-        public bool IsStatic
+        public String ThreadID
         {
-            get { return _instanceObjectID == 0; }
+            get { return _threadID; }
+            set { _threadID = value; }
         }
         public EventTypeEnum EventType
         {
@@ -75,7 +81,7 @@ namespace Demo
             get { return _methodInfo; }
             set { _methodInfo = value; }
         }
-        public int InstanceObjectID
+        public String InstanceObjectID
         {
             get { return _instanceObjectID; }
             set { _instanceObjectID = value; }

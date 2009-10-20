@@ -14,18 +14,22 @@ namespace Demo
         class ColumnData {
             public int column;
             public float openedAtY;
+            public ColumnData calledBy;
         }
 
         private int nextFreeColumn = 0;
         private ArrayList events = new ArrayList();
         private Hashtable columns = new Hashtable();
         private int padding = 30;
-        private int colWidth = 90;
+        private int colWidth = 200;
         private int methodBodyWidth = 20;
-        private int colInterspace = 40;
+        private int colInterspace = 20;
+        private int minimumMethodHeight = 60;
+        private int maximumStaticHeight = 200;
         private Pen currentThreadPen = new Pen(Color.Red);
         private int headerHeight = 40;
         private int headerInterspaceHeight = 20;
+        private ColumnData lastColumnData = null;
 
         public UMLGraph()
         {
@@ -41,34 +45,35 @@ namespace Demo
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+            e.Graphics.ScaleTransform(0.1f, 0.01f);
             e.Graphics.FillRectangle(new SolidBrush(Color.White), new Rectangle(0, 0, Width, Height));
-
+            /*
             for (int i = 0; i < 30; i++) {
                 e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace), padding, padding + i * (colWidth + colInterspace), 1000);
                 e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace) + colWidth, padding, padding + i * (colWidth + colInterspace) + colWidth, 1000);
             }
-
+            */
             if (events.Count == 0) return;
 
-            long minDelta = -1;
-            long startTime = ((LogEvent)events[0]).timestamp.Ticks;
+            double minDelta = -1;
+            double startTime = ((LogEvent)events[0]).timestamp;
 
             for (int i=1; i<events.Count; i++) {
-                long t1 = ((LogEvent)events[i-1]).timestamp.Ticks;
-                long t2 = ((LogEvent)events[i]).timestamp.Ticks;
-                long delta = t2 - t1;
+                double t1 = ((LogEvent)events[i - 1]).timestamp;
+                double t2 = ((LogEvent)events[i]).timestamp;
+                double delta = t2 - t1;
                 if (minDelta == -1) minDelta = delta;
                 minDelta = Math.Min(minDelta, delta);
             }
 
-            float scaleY = (float) colInterspace / minDelta;
+            float scaleY = 2.0f * minimumMethodHeight / (float)minDelta;
 
             foreach (LogEvent ev in events) {
                 if (ev is MethodEvent) {
                     MethodEvent mev = (MethodEvent) ev;
                     String hash;
 
-                    if (mev.InstanceObjectID != 0)
+                    if (!mev.MethodInfo.IsStatic)
                         hash = mev.InstanceObjectID.ToString();
                     else
                         hash = mev.MethodInfo.ClassName;
@@ -86,11 +91,11 @@ namespace Demo
 
                     ColumnData col = (ColumnData)this.columns[hash];
 
-                    float eventY = padding + headerHeight + headerInterspaceHeight + (mev.timestamp.Ticks - startTime) * scaleY;
+                    float eventY = padding + headerHeight + headerInterspaceHeight + (float) (mev.timestamp - startTime) * scaleY;
                     float eventX = padding + (colWidth + colInterspace) * col.column;
 
                     if (drawHeader) {
-                        if (mev.InstanceObjectID != 0)
+                        if (!mev.MethodInfo.IsStatic)
                         {
                             this.drawInstanceHeader(e.Graphics, eventX, eventY - headerHeight - headerInterspaceHeight, mev.MethodInfo.ClassName + " (" + mev.InstanceObjectID.ToString() + ")", false);
                         }
@@ -101,13 +106,26 @@ namespace Demo
                     
                     if (mev.EventType == MethodEvent.EventTypeEnum.EnterEvent) 
                     {
+                        col.calledBy = this.lastColumnData;
+                        this.lastColumnData = col;
                         col.openedAtY = eventY;
                     }
                     else if (mev.EventType == MethodEvent.EventTypeEnum.LeaveEvent)
                     {
-                        this.drawMethod(e.Graphics, eventX + (colWidth - methodBodyWidth) * 0.5f, col.openedAtY, methodBodyWidth, eventY - col.openedAtY);
-                    }
+                        this.lastColumnData = col.calledBy;
 
+                        this.drawMethod(e.Graphics, eventX + (colWidth - methodBodyWidth) * 0.5f, col.openedAtY, methodBodyWidth, eventY - col.openedAtY);
+
+                        if (col.calledBy != null)
+                        {
+                            float arrowStartX = padding + (colWidth + colInterspace) * col.calledBy.column + (colWidth - methodBodyWidth) * 0.5f + methodBodyWidth;
+                            float arrowEndX = eventX + (colWidth - methodBodyWidth) * 0.5f;
+                            this.drawStartArrow(e.Graphics, arrowStartX, arrowEndX, col.openedAtY + colInterspace * 0.5f, mev.MethodInfo.MethodName);
+                            this.drawReturnArrow(e.Graphics, arrowEndX, arrowStartX, eventY - colInterspace * 0.5f);
+                        }
+
+                    }
+                    
                 }
             }
         }
@@ -128,7 +146,6 @@ namespace Demo
 
         void drawMethod(Graphics g, float x, float y, float width, float height)
         {
-
             g.DrawRectangle(currentThreadPen, x, y, width, height);
 
             for (int i = 0; i < height + width; i += 3) {
@@ -151,8 +168,45 @@ namespace Demo
 
                 g.DrawLine(currentThreadPen, fx, fy, lx, ly);
             }
+        }
 
+        void drawStartArrow(Graphics g, float x1, float x2, float y, String title) {
+            Pen p = new Pen(currentThreadPen.Brush, 2);
 
+            g.DrawLine(p, x1, y, x2, y);
+
+            if (x1 < x2)
+            {
+                g.DrawLine(p, x2 - 5, y - 5, x2, y);
+                g.DrawLine(p, x2 - 5, y + 5, x2, y);
+                g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 + 5, y - 15);
+            }
+            else {
+                g.DrawLine(p, x2 + 5, y - 5, x2, y);
+                g.DrawLine(p, x2 + 5, y + 5, x2, y);
+                g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 - 5, y - 15);
+            }
+
+            
+        }
+
+        void drawReturnArrow(Graphics g, float x1, float x2, float y)
+        {
+            Pen p = new Pen(currentThreadPen.Brush, 2);
+            float[] dashValues = { 5, 2 };
+            p.DashPattern = dashValues;
+
+            g.DrawLine(p, x1, y, x2, y);
+            if (x1 < x2)
+            {
+                g.DrawLine(p, x2 - 5, y - 5, x2, y);
+                g.DrawLine(p, x2 - 5, y + 5, x2, y);
+            }
+            else
+            {
+                g.DrawLine(p, x2 + 5, y - 5, x2, y);
+                g.DrawLine(p, x2 + 5, y + 5, x2, y);
+            }
         }
 
         

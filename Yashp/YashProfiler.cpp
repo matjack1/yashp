@@ -181,9 +181,10 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		methodEvent->SetAttribute("objectId", functionInfo->getInstanceAddr());
 		methodEvent->SetAttribute("threadId", threadStr.str().c_str());
 		methodEvent->SetAttribute("type", "Enter");
-		char *timestamp = new char(256);
-		sprintf(timestamp, "%ld", clock());
-		methodEvent->SetAttribute("timestamp", timestamp);
+		LARGE_INTEGER time, freq;
+		QueryPerformanceCounter(&time);
+		QueryPerformanceFrequency(&freq);
+		methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
 		char *stackDepth = new char(256);
 		sprintf(stackDepth, "%d", m_callStackSize);
 		methodEvent->SetAttribute("stackDepth", stackDepth);
@@ -224,9 +225,10 @@ void CYashProfiler::Leave(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		methodEvent->SetAttribute("objectId", functionInfo->getInstanceAddr());
 		methodEvent->SetAttribute("threadId", threadStr.str().c_str());
 		methodEvent->SetAttribute("type", "Leave");
-		char *timestamp = new char(256);
-		sprintf(timestamp, "%ld", clock());
-		methodEvent->SetAttribute("timestamp", timestamp);
+		LARGE_INTEGER time, freq;
+		QueryPerformanceCounter(&time);
+		QueryPerformanceFrequency(&freq);
+		methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
 		char *stackDepth = new char(256);
 		sprintf(stackDepth, "%d", m_callStackSize);
 		methodEvent->SetAttribute("stackDepth", stackDepth);

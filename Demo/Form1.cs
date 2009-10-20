@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Collections;
+using System.Xml.XPath;
+
 
 namespace Demo
 {
@@ -16,78 +18,65 @@ namespace Demo
         {
             InitializeComponent();
 
-            MethodInfo m1 = new MethodInfo();
-            m1.ClassName = "TestClass";
-            m1.MethodName = "TestMethod";
-            m1.FunctionID = 2123;
+            ArrayList m = readFromXML();
 
-            MethodInfo m2 = new MethodInfo();
-            m2.ClassName = "StartClass";
-            m2.MethodName = "Main";
-            m2.FunctionID = 2133;
+            this.umlGraph.setEvents(m);
+        }
 
-            DateTime now = DateTime.Now;
+        ArrayList readFromXML()
+        {
+            XPathDocument doc = new XPathDocument("C:\\Documents and Settings\\Administrator\\My Documents\\Visual Studio 2008\\Projects\\yashp\\YashpViewer\\bin\\Debug\\YashpOutput.xml");
+            XPathNavigator nav = doc.CreateNavigator();
 
-            MethodEvent e1 = new MethodEvent();
-            e1.EventType = MethodEvent.EventTypeEnum.EnterEvent;
-            e1.InstanceObjectID = 3;
-            e1.MethodInfo = m1;
-            e1.timestamp = new DateTime(now.Ticks + 200);
+            XPathExpression functionInfosExpression = nav.Compile("infos/functionInfos/functionInfo");
+            XPathNodeIterator functionInfosIterator = nav.Select(functionInfosExpression);
 
-            MethodEvent e2 = new MethodEvent();
-            e2.EventType = MethodEvent.EventTypeEnum.EnterEvent;
-            e2.InstanceObjectID = 4;
-            e2.MethodInfo = m1;
-            e2.timestamp = new DateTime(now.Ticks + 800);
+            XPathExpression eventsExpression = nav.Compile("infos/events/methodEvent");
+            XPathNodeIterator eventsIterator = nav.Select(eventsExpression);
 
-            MethodEvent e3 = new MethodEvent();
-            e3.EventType = MethodEvent.EventTypeEnum.EnterEvent;
-            e3.InstanceObjectID = 5;
-            e3.MethodInfo = m1;
-            e3.timestamp = new DateTime(now.Ticks + 1200);
+            Hashtable functionInfos = new Hashtable();
 
-            MethodEvent e0 = new MethodEvent();
-            e0.EventType = MethodEvent.EventTypeEnum.EnterEvent;
-            e0.InstanceObjectID = 6;
-            e0.MethodInfo = m2;
-            e0.timestamp = new DateTime(now.Ticks);
+            while (functionInfosIterator.MoveNext())
+            {
+                XPathNavigator node = functionInfosIterator.Current.Clone();
 
-            MethodEvent l1 = new MethodEvent();
-            l1.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
-            l1.InstanceObjectID = 3;
-            l1.MethodInfo = m1;
-            l1.timestamp = new DateTime(now.Ticks + 500);
+                MethodInfo m = new MethodInfo();
+                m.FunctionID = node.GetAttribute("functionId", String.Empty);
+                m.ClassName = node.GetAttribute("className", String.Empty);
+                m.MethodName = node.GetAttribute("methodName", String.Empty);
+                if (node.GetAttribute("static", String.Empty).Length > 0)
+                m.IsStatic = Convert.ToBoolean(node.GetAttribute("static", String.Empty));
+                m.ReturnType = node.GetAttribute("returnType", String.Empty);
 
-            MethodEvent l2 = new MethodEvent();
-            l2.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
-            l2.InstanceObjectID = 4;
-            l2.MethodInfo = m1;
-            l2.timestamp = new DateTime(now.Ticks + 2500);
-
-            MethodEvent l3 = new MethodEvent();
-            l3.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
-            l3.InstanceObjectID = 5;
-            l3.MethodInfo = m1;
-            l3.timestamp = new DateTime(now.Ticks + 1500);
-
-            MethodEvent l0 = new MethodEvent();
-            l0.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
-            l0.InstanceObjectID = 6;
-            l0.MethodInfo = m2;
-            l0.timestamp = new DateTime(now.Ticks + 3500);
+                functionInfos[m.FunctionID] = m;
+            }
 
             ArrayList events = new ArrayList();
-            events.Add(e0);
-            events.Add(e1);
-            events.Add(l1);
-            events.Add(e2);
-            events.Add(e3);
-            events.Add(l3);
-            events.Add(l2);
-            events.Add(l0);
 
-            this.umlGraph.setEvents(events);
+            while (eventsIterator.MoveNext())
+            {
+                XPathNavigator node = eventsIterator.Current.Clone();
+
+                MethodEvent m = new MethodEvent();
+                m.InstanceObjectID = node.GetAttribute("objectId", String.Empty);
+                m.MethodInfo = (MethodInfo) functionInfos[node.GetAttribute("functionId", String.Empty)];
+                m.ThreadID = node.GetAttribute("threadId", String.Empty);
+                m.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty));
+
+                String type = node.GetAttribute("type", String.Empty);
+
+                if (type == "Enter")
+                    m.EventType = MethodEvent.EventTypeEnum.EnterEvent;
+                else if (type == "Leave")
+                    m.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
+
+                events.Add(m);
+            }
+
+            return events;
         }
 
     }
+
+    
 }
