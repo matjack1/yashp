@@ -55,8 +55,8 @@ CYashProfiler::CYashProfiler()
 	m_events = new TiXmlElement( "events" );
 	TiXmlElement *infos = new TiXmlElement( "infos" );
 	m_doc.LinkEndChild( infos );
-	infos.LinkEndChild( m_functionInfos );
-	infos.LinkEndChild( m_events );
+	infos->LinkEndChild( m_functionInfos );
+	infos->LinkEndChild( m_events );
 }
 
 HRESULT CYashProfiler::FinalConstruct()

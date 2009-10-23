@@ -132,7 +132,7 @@ namespace Demo
         private int nextFreeThreadColor = 0;
 
         static private int padding = 30;
-        static private int colWidth = 200;
+        static private int colWidth = 150;
         static private int methodBodyWidth = 20;
         static private int colInterspace = 20;
         static private int headerInterspaceHeight = 20;
@@ -166,7 +166,7 @@ namespace Demo
             public ClassData classData;
 
             public float getColumnLeftX() {
-                return classData.getColumnLeftX() + (methodBodyWidth * 0.5f) * methodColumnNumber;
+                return (colWidth - methodBodyWidth) * 0.5f + classData.getColumnLeftX() + (methodBodyWidth * 0.5f) * methodColumnNumber;
             }
 
             public float getColumnRightX()
@@ -247,10 +247,9 @@ namespace Demo
 
                         lastMethodData[currentThreadID] = currentMethodData;
 
-                        Console.WriteLine("Aggiungo metodo " + e.getHash());
-
                         drawMethodEnter(g, currentMethodData, lastY + deltaY);
 
+                        Console.WriteLine("Aggiungo metodo " + e.getHash());
                     }
                     else if (e.EventType == MethodEvent.EventTypeEnum.LeaveEvent) {
 
@@ -258,9 +257,9 @@ namespace Demo
                         lastMethodData[currentThreadID] = currentMethodData.callerMethodData;
                         currentClassData.methodData.RemoveAt(currentClassData.methodData.Count - 1);
 
-                        Console.WriteLine("Rimuovo metodo " + e.getHash());
+                        drawMethodLeave(g, currentMethodData, lastY + deltaY);
 
-                        drawMethodEnter(g, currentMethodData, lastY + deltaY);
+                        Console.WriteLine("Rimuovo metodo " + e.getHash());
                     }
 
                 }
@@ -365,44 +364,87 @@ namespace Demo
             float rightX = d.getColumnRightX();
 
             g.DrawLine(pen, leftX, startY, rightX, startY);
+
+            if (d.callerMethodData != null) {
+                drawStartArrow(g, d, d.callerMethodData, startY, d.methodEvent.MethodInfo.MethodName + "()");
+            }
         }
 
         void drawMethodLeave(Graphics g, MethodData d, float startY)
         {
+
             Pen pen = new Pen(getThreadColor(d.methodEvent));
 
             float leftX = d.getColumnLeftX();
             float rightX = d.getColumnRightX();
 
             g.DrawLine(pen, leftX, startY, rightX, startY);
+
+            if (d.callerMethodData != null)
+            {
+                drawReturnArrow(g, d, d.callerMethodData, startY);
+            }
         }
 
-        /*
-        void drawStartArrow(Graphics g, float x1, float x2, float y, String title) {
 
-            Pen pen = new Pen(e.getThreadColor(), 2);
+        void drawStartArrow(Graphics g, MethodData d1, MethodData d2, float y, String title)
+        {
+            Pen p = new Pen(getThreadColor(d1.methodEvent), 2);
 
-            g.DrawLine(pen, x1, y, x2, y);
-
-            if (x1 < x2)
+            if (d1.classData == d2.classData)
             {
-                g.DrawLine(p, x2 - 5, y - 5, x2, y);
-                g.DrawLine(p, x2 - 5, y + 5, x2, y);
-                g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 + 5, y - 15);
-            }
-            else {
-                g.DrawLine(p, x2 + 5, y - 5, x2, y);
-                g.DrawLine(p, x2 + 5, y + 5, x2, y);
-                g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 - 5, y - 15);
-            }
 
+                g.DrawLine(p, d1.getColumnRightX(), y + 8, d2.getColumnRightX() + 20, y + 8);
+                g.DrawLine(p, d2.getColumnRightX() + 20, y + 8, d2.getColumnRightX() + 20, y - 8);
+                g.DrawLine(p, d2.getColumnRightX() + 20, y - 8, d2.getColumnRightX(), y - 8);
+
+                g.DrawLine(p, d1.getColumnRightX() + 5, y + 3, d1.getColumnRightX(), y + 8);
+                g.DrawLine(p, d1.getColumnRightX() + 5, y + 13, d1.getColumnRightX(), y + 8);
+
+                g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, d2.getColumnRightX() + 5, y - 23);
+
+                return;
+            }
+            else
+            {
+                y += 5;
+
+                float x2 = d1.getColumnLeftX();
+                float x1 = d2.getColumnRightX();
+
+                g.DrawLine(p, x1, y, x2, y);
+
+                if (x1 < x2)
+                {
+                    g.DrawLine(p, x2 - 5, y - 5, x2, y);
+                    g.DrawLine(p, x2 - 5, y + 5, x2, y);
+                    g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 + 5, y - 15);
+                }
+                else
+                {
+                    g.DrawLine(p, x2 + 5, y - 5, x2, y);
+                    g.DrawLine(p, x2 + 5, y + 5, x2, y);
+                    g.DrawString(title, new Font("Tahoma", 7), Brushes.Black, x1 - 5, y - 15);
+                }
+            }
             
         }
 
-        void drawReturnArrow(Graphics g, float x1, float x2, float y)
+
+        void drawReturnArrow(Graphics g, MethodData d1, MethodData d2, float y)
         {
-            Pen p = new Pen(currentThreadPen.Brush, 2);
-            float[] dashValues = { 5, 2 };
+
+            if (d1.classData == d2.classData) {
+                return;
+            }
+
+            y -= 5;
+            Pen p = new Pen(getThreadColor(d1.methodEvent), 2);
+
+            float x1 = d1.getColumnLeftX();
+            float x2 = d2.getColumnRightX();
+
+            float[] dashValues = { 4, 1 };
             p.DashPattern = dashValues;
 
             g.DrawLine(p, x1, y, x2, y);
@@ -417,7 +459,7 @@ namespace Demo
                 g.DrawLine(p, x2 + 5, y + 5, x2, y);
             }
         }
-        */
+        
         
         public void RoundedCornerRectangle(Graphics gfxObj, Pen penObj, float X, float Y, float RectWidth, float RectHeight, float CornerRadius)
         {
