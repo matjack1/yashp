@@ -86,6 +86,17 @@ namespace Demo
             get { return _instanceObjectID; }
             set { _instanceObjectID = value; }
         }
+
+        public String getHash() {
+            String hash;
+
+            if (!this.MethodInfo.IsStatic)
+                hash = this.InstanceObjectID.ToString();
+            else
+                hash = this.MethodInfo.ClassName;
+
+            return hash;
+        }
     }
 
     class ThreadEvent : LogEvent

@@ -53,8 +53,10 @@ CYashProfiler::CYashProfiler()
 	m_doc.LinkEndChild( decl );
 	m_functionInfos = new TiXmlElement( "functionInfos" );
 	m_events = new TiXmlElement( "events" );
-	m_doc.LinkEndChild( m_functionInfos );
-	m_doc.LinkEndChild( m_events );
+	TiXmlElement *infos = new TiXmlElement( "infos" );
+	m_doc.LinkEndChild( infos );
+	infos.LinkEndChild( m_functionInfos );
+	infos.LinkEndChild( m_events );
 }
 
 HRESULT CYashProfiler::FinalConstruct()
@@ -288,15 +290,16 @@ STDMETHODIMP CYashProfiler::ExceptionThrown(ObjectID thrownObjectID)
 	threadStr << threadId;
 	
 	// add to XML
-	TiXmlElement * methodEvent = new TiXmlElement( "methodEvent" );
+	TiXmlElement * methodEvent = new TiXmlElement( "exceptionEvent" );
 	char *exceptionId = new char(256);
 	sprintf(exceptionId, "%d", thrownObjectID);
 	methodEvent->SetAttribute("exceptionId", exceptionId);
 	methodEvent->SetAttribute("threadId", threadStr.str().c_str());
 	methodEvent->SetAttribute("type", "ExceptionThrown");
-	char *timestamp = new char(256);
-	sprintf(timestamp, "%ld", clock());
-	methodEvent->SetAttribute("timestamp", timestamp);
+	LARGE_INTEGER time, freq;
+	QueryPerformanceCounter(&time);
+	QueryPerformanceFrequency(&freq);
+	methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
 	m_events->LinkEndChild( methodEvent );  
 
 	return S_OK;

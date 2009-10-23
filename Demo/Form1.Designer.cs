@@ -33,9 +33,11 @@
             // 
             // umlGraph
             // 
-            this.umlGraph.Location = new System.Drawing.Point(12, 12);
+            this.umlGraph.AutoSize = true;
+            this.umlGraph.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.umlGraph.Location = new System.Drawing.Point(0, 0);
             this.umlGraph.Name = "umlGraph";
-            this.umlGraph.Size = new System.Drawing.Size(823, 588);
+            this.umlGraph.Size = new System.Drawing.Size(847, 612);
             this.umlGraph.TabIndex = 0;
             // 
             // Form1
@@ -47,6 +49,7 @@
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 

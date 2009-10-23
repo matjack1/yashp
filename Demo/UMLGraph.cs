@@ -11,26 +11,6 @@ namespace Demo
     class UMLGraph : UserControl
     {
 
-        class ColumnData {
-            public int column;
-            public float openedAtY;
-            public ColumnData calledBy;
-        }
-
-        private int nextFreeColumn = 0;
-        private ArrayList events = new ArrayList();
-        private Hashtable columns = new Hashtable();
-        private int padding = 30;
-        private int colWidth = 200;
-        private int methodBodyWidth = 20;
-        private int colInterspace = 20;
-        private int minimumMethodHeight = 60;
-        private int maximumStaticHeight = 200;
-        private Pen currentThreadPen = new Pen(Color.Red);
-        private int headerHeight = 40;
-        private int headerInterspaceHeight = 20;
-        private ColumnData lastColumnData = null;
-
         public UMLGraph()
         {
 
@@ -41,26 +21,26 @@ namespace Demo
             events = eventsLog;
             this.Invalidate();
         }
-
-        protected override void OnPaint(PaintEventArgs e)
+        /*
+        protected override void OnPaint1(PaintEventArgs e)
         {
             base.OnPaint(e);
             e.Graphics.ScaleTransform(0.1f, 0.01f);
             e.Graphics.FillRectangle(new SolidBrush(Color.White), new Rectangle(0, 0, Width, Height));
-            /*
+            
             for (int i = 0; i < 30; i++) {
                 e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace), padding, padding + i * (colWidth + colInterspace), 1000);
                 e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace) + colWidth, padding, padding + i * (colWidth + colInterspace) + colWidth, 1000);
             }
-            */
+            
             if (events.Count == 0) return;
 
             double minDelta = -1;
             double startTime = ((LogEvent)events[0]).timestamp;
 
             for (int i=1; i<events.Count; i++) {
-                double t1 = ((LogEvent)events[i - 1]).timestamp;
-                double t2 = ((LogEvent)events[i]).timestamp;
+                double t1 = ((LogEvent) events[i - 1]).timestamp;
+                double t2 = ((LogEvent) events[i]).timestamp;
                 double delta = t2 - t1;
                 if (minDelta == -1) minDelta = delta;
                 minDelta = Math.Min(minDelta, delta);
@@ -129,51 +109,280 @@ namespace Demo
                 }
             }
         }
+        
+        
+        
+        private Hashtable columns = new Hashtable();
+        
+        private int minimumMethodHeight = 60;
+        private int maximumStaticHeight = 200;
+        private Pen currentThreadPen = new Pen(Color.Red);
+        private int headerHeight = 40;
+        
+        private ColumnData lastColumnData = null;
 
-        void drawInstanceHeader(Graphics g, float x, float y, String title, bool isStatic) {
-            if (isStatic) {
-                g.DrawRectangle(new Pen(Color.Black), x, y, colWidth, headerHeight);
-            } else {
-                RoundedCornerRectangle(g, new Pen(Color.Black), x, y, colWidth, headerHeight, 10);
+        */
+
+
+
+
+
+        private Color[] threadColorLibrary = { Color.Red, Color.Blue, Color.Green, Color.Orange, Color.Pink };
+        private Color backgroundColor = Color.White;
+        private int nextFreeThreadColor = 0;
+
+        static private int padding = 30;
+        static private int colWidth = 200;
+        static private int methodBodyWidth = 20;
+        static private int colInterspace = 20;
+        static private int headerInterspaceHeight = 20;
+
+        private int nextFreeColumn = 0;
+        private float zoomScale = 1.0f;
+
+        private Hashtable classData = new Hashtable();
+        private Hashtable lastMethodData = new Hashtable();
+        private Hashtable threadColor = new Hashtable();
+        private ArrayList events = new ArrayList();
+
+        class ClassData {
+            public int columnNumber;
+            public MethodInfo methodInfo;
+            public String instanceObjectID;
+
+            public ArrayList methodData = new ArrayList();
+
+            public float getColumnLeftX()
+            {
+                return columnNumber * (colWidth + colInterspace);
             }
+        }
+
+        class MethodData
+        {
+            public int methodColumnNumber;
+            public MethodEvent methodEvent;
+            public MethodData callerMethodData;
+            public ClassData classData;
+
+            public float getColumnLeftX() {
+                return classData.getColumnLeftX() + (methodBodyWidth * 0.5f) * methodColumnNumber;
+            }
+
+            public float getColumnRightX()
+            {
+                return getColumnLeftX() + methodBodyWidth;
+            }
+        }
+
+
+        protected override void OnPaint(PaintEventArgs eva)
+        {
+            base.OnPaint(eva);
+
+            classData = new Hashtable();
+            lastMethodData = new Hashtable();
+            threadColor = new Hashtable();
+            nextFreeThreadColor = 0;
+            nextFreeColumn = 0;
+
+            Graphics g = eva.Graphics;
+
+            g.FillRectangle(new SolidBrush(Color.White), new Rectangle(0, 0, Width, Height));
+
+            if (events.Count == 0) {
+                return;
+            }
+            
+            g.ScaleTransform(zoomScale, zoomScale);
+            g.TranslateTransform(padding, padding + 40);
+
+            double lastTimestamp = ((LogEvent)events[0]).timestamp;
+            float lastY = 0;
+            double minimumDeltaTime = getMinimumDeltaTime();
+
+            foreach (LogEvent logEvent in events)
+            {
+
+                double deltaTime = logEvent.timestamp - lastTimestamp;
+                float deltaY = (float) Math.Min( 20 * (deltaTime / minimumDeltaTime), 30);
+
+                Console.WriteLine("Timestamp: " + logEvent.timestamp + " Delta: " + deltaTime);
+
+                foreach (DictionaryEntry de in classData) {
+                    ClassData d = (ClassData) de.Value;
+
+                    foreach (MethodData m in d.methodData)
+                    {
+                        Console.WriteLine("Disegno " + m.methodEvent.getHash() + " da " + lastY + " a " + (lastY + deltaY));
+                        drawMethodData(g, m, lastY, lastY + deltaY);
+                    }
+                }
+
+                if (logEvent is MethodEvent)
+                {
+                    MethodEvent e = (MethodEvent) logEvent;
+
+                    String currentThreadID = e.ThreadID;
+                    bool mustDrawHeader = !classData.ContainsKey(e.getHash());
+                    ClassData currentClassData = getOrCreateClassData(e);
+
+                    if (mustDrawHeader) {
+                        Console.WriteLine("Disegno header " + lastY);
+                        drawHeader(g, e, currentClassData.getColumnLeftX(), lastY + deltaY);
+                    }
+                    
+                    if (e.EventType == MethodEvent.EventTypeEnum.EnterEvent) {
+
+                        MethodData currentMethodData = new MethodData();
+
+                        if (lastMethodData.ContainsKey(currentThreadID))
+                            currentMethodData.callerMethodData = (MethodData) lastMethodData[currentThreadID];
+                        
+                        currentMethodData.classData = currentClassData;
+                        currentMethodData.methodColumnNumber = currentClassData.methodData.Count;
+                        currentMethodData.methodEvent = e;
+
+                        currentClassData.methodData.Add(currentMethodData);
+
+                        lastMethodData[currentThreadID] = currentMethodData;
+
+                        Console.WriteLine("Aggiungo metodo " + e.getHash());
+
+                        drawMethodEnter(g, currentMethodData, lastY + deltaY);
+
+                    }
+                    else if (e.EventType == MethodEvent.EventTypeEnum.LeaveEvent) {
+
+                        MethodData currentMethodData = (MethodData) currentClassData.methodData[currentClassData.methodData.Count - 1];
+                        lastMethodData[currentThreadID] = currentMethodData.callerMethodData;
+                        currentClassData.methodData.RemoveAt(currentClassData.methodData.Count - 1);
+
+                        Console.WriteLine("Rimuovo metodo " + e.getHash());
+
+                        drawMethodEnter(g, currentMethodData, lastY + deltaY);
+                    }
+
+                }
+
+                lastY += deltaY;
+                lastTimestamp = logEvent.timestamp;
+
+            }
+            
+        }
+
+        ClassData getOrCreateClassData(MethodEvent mev)
+        {
+            String hash = mev.getHash();
+
+            if (!classData.ContainsKey(hash))
+            {
+                ClassData c = new ClassData();
+                c.instanceObjectID = mev.InstanceObjectID;
+                c.columnNumber = nextFreeColumn++;
+                this.classData[hash] = c;
+            }
+
+            return (ClassData) this.classData[hash];
+        }
+
+        double getMinimumDeltaTime()
+        {
+
+            if (events.Count == 0) return 0;
+
+            double minDelta = -1;
+            double startTime = ((LogEvent)events[0]).timestamp;
+            for (int i = 1; i < events.Count; i++)
+            {
+                double t1 = ((LogEvent)events[i - 1]).timestamp;
+                double t2 = ((LogEvent)events[i]).timestamp;
+                double delta = t2 - t1;
+                if (minDelta == -1) minDelta = delta;
+                minDelta = Math.Min(minDelta, delta);
+            }
+
+            return minDelta;
+        }
+
+        void drawHeader(Graphics g, MethodEvent e, float x, float y)
+        {
+            String title = e.MethodInfo.ClassName;
+            Pen blackBorderPen = new Pen(Color.Black);
+            Font textFont = new Font("Tahoma", 8);
+
+            if (!e.MethodInfo.IsStatic)
+                title += "\nInst. " + e.InstanceObjectID.ToString();
 
             StringFormat f = new StringFormat();
             f.Alignment = StringAlignment.Center;
             f.LineAlignment = StringAlignment.Center;
 
-            g.DrawString(title, new Font("Tahoma", 8), Brushes.Black, x + colWidth * 0.5f, y + (headerHeight - 8) * 0.5f, f); 
-        }
+            SizeF stringSize = new SizeF();
+            stringSize = g.MeasureString(title, textFont, new SizeF(colWidth, 50));
 
-        void drawMethod(Graphics g, float x, float y, float width, float height)
-        {
-            g.DrawRectangle(currentThreadPen, x, y, width, height);
+            int boxHeight = (int) (stringSize.Height + 20);
 
-            for (int i = 0; i < height + width; i += 3) {
-                float fx = x, fy = y + i;
-                float lx, ly;
-                if (i < width)
-                {
-                    lx = x + i;
-                    ly = y;
-                }
-                else {
-                    lx = x + width;
-                    ly = y + i - width;
-                }
-
-                if (fy > y + height) {
-                    fx = fx + (fy - y - height);
-                    fy = y + height;
-                }
-
-                g.DrawLine(currentThreadPen, fx, fy, lx, ly);
+            if (e.MethodInfo.IsStatic)
+            {
+                g.DrawRectangle(blackBorderPen, x, y - boxHeight - 20, colWidth, boxHeight);
             }
+            else
+            {
+                RoundedCornerRectangle(g, blackBorderPen, x, y - boxHeight - 20, colWidth, boxHeight, 10);
+            }
+
+            g.DrawString(title, textFont, Brushes.Black, x + colWidth * 0.5f, y + 10 + stringSize.Height * 0.5f - boxHeight - 20, f); 
         }
 
-        void drawStartArrow(Graphics g, float x1, float x2, float y, String title) {
-            Pen p = new Pen(currentThreadPen.Brush, 2);
+        Color getThreadColor(MethodEvent e) {
+            if (!threadColor.ContainsKey(e.ThreadID)) {
+                threadColor[e.ThreadID] = threadColorLibrary[nextFreeThreadColor++];
+                if (nextFreeThreadColor == threadColorLibrary.Length) nextFreeThreadColor = 0;
+            }
 
-            g.DrawLine(p, x1, y, x2, y);
+            return (Color) threadColor[e.ThreadID];
+        }
+
+        void drawMethodData(Graphics g, MethodData d, float startY, float endY)
+        {
+            Pen pen = new Pen(getThreadColor(d.methodEvent));
+
+            float leftX = d.getColumnLeftX();
+            float rightX = d.getColumnRightX();
+
+            //g.DrawRectangle(pen, leftX, startY, rightX - leftX, endY - startY);
+            g.DrawLine(pen, leftX, startY, leftX, endY);
+            g.DrawLine(pen, rightX, startY, rightX, endY);
+        }
+
+        void drawMethodEnter(Graphics g, MethodData d, float startY)
+        {
+            Pen pen = new Pen(getThreadColor(d.methodEvent));
+
+            float leftX = d.getColumnLeftX();
+            float rightX = d.getColumnRightX();
+
+            g.DrawLine(pen, leftX, startY, rightX, startY);
+        }
+
+        void drawMethodLeave(Graphics g, MethodData d, float startY)
+        {
+            Pen pen = new Pen(getThreadColor(d.methodEvent));
+
+            float leftX = d.getColumnLeftX();
+            float rightX = d.getColumnRightX();
+
+            g.DrawLine(pen, leftX, startY, rightX, startY);
+        }
+
+        /*
+        void drawStartArrow(Graphics g, float x1, float x2, float y, String title) {
+
+            Pen pen = new Pen(e.getThreadColor(), 2);
+
+            g.DrawLine(pen, x1, y, x2, y);
 
             if (x1 < x2)
             {
@@ -208,7 +417,7 @@ namespace Demo
                 g.DrawLine(p, x2 + 5, y + 5, x2, y);
             }
         }
-
+        */
         
         public void RoundedCornerRectangle(Graphics gfxObj, Pen penObj, float X, float Y, float RectWidth, float RectHeight, float CornerRadius)
         {

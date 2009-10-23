@@ -13,12 +13,12 @@ namespace ApplicationTest
             Test t = new Test();
             Test2 fantasy = new Test2();
 
-            for (int i=0; i<10; i++)
+            for (int i = 0; i < 1; i++)
                 t.setX(10);
 
             Test t2 = new Test();
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1; i++)
             {
                 t2.setX(10);
             }
@@ -48,8 +48,15 @@ namespace ApplicationTest
 
     class Test2
     {
+
+        public static int secondCall()
+        {
+            return 5;
+        }
+
         public static int sumInt(int x, int y)
         {
+            secondCall();
             return x + y;
         }
 
