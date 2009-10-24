@@ -8,9 +8,27 @@ namespace ApplicationTest
 {
     class Test
     {
+
+         static void MyCallbackFunction()
+        {
+
+            int a  = 0;
+            for (int i=0; i<100; i++)
+            {
+                a += 10;
+            }
+
+            Test2.secondCall();
+            Test t = new Test();
+            t.setX(10);
+        }
+
         static void Main()
         {
             Test t = new Test();
+
+            Test2.secondCall();
+
             Test2 fantasy = new Test2();
 
             for (int i = 0; i < 1; i++)
@@ -22,6 +40,9 @@ namespace ApplicationTest
             {
                 t2.setX(10);
             }
+
+            Thread MyThread = new Thread(new ThreadStart(MyCallbackFunction));
+            MyThread.Start();
 
             Test2.sumInt(2, 4);
             fantasy.almostSum(2, 4);
@@ -37,6 +58,7 @@ namespace ApplicationTest
 
         void setX(int x) {
             this.x = x;
+            this.x = Math.Max(x, 2);
         }
 
         int getX() {

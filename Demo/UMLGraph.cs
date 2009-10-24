@@ -19,113 +19,36 @@ namespace Demo
         public void setEvents(ArrayList eventsLog)
         {
             events = eventsLog;
-            this.Invalidate();
-        }
-        /*
-        protected override void OnPaint1(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            e.Graphics.ScaleTransform(0.1f, 0.01f);
-            e.Graphics.FillRectangle(new SolidBrush(Color.White), new Rectangle(0, 0, Width, Height));
-            
-            for (int i = 0; i < 30; i++) {
-                e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace), padding, padding + i * (colWidth + colInterspace), 1000);
-                e.Graphics.DrawLine(new Pen(Color.Gray), padding + i * (colWidth + colInterspace) + colWidth, padding, padding + i * (colWidth + colInterspace) + colWidth, 1000);
-            }
-            
-            if (events.Count == 0) return;
 
-            double minDelta = -1;
-            double startTime = ((LogEvent)events[0]).timestamp;
+            classData = new Hashtable();
+            lastMethodData = new Hashtable();
+            threadColor = new Hashtable();
+            nextFreeThreadColor = 0;
+            nextFreeColumn = 0;
 
-            for (int i=1; i<events.Count; i++) {
-                double t1 = ((LogEvent) events[i - 1]).timestamp;
-                double t2 = ((LogEvent) events[i]).timestamp;
-                double delta = t2 - t1;
-                if (minDelta == -1) minDelta = delta;
-                minDelta = Math.Min(minDelta, delta);
-            }
+            double lastTimestamp = ((LogEvent)events[0]).timestamp;
+            float lastY = 0;
+            double mediumDeltaTime = getMediumDeltaTime();
 
-            float scaleY = 2.0f * minimumMethodHeight / (float)minDelta;
+            foreach (LogEvent logEvent in events)
+            {
 
-            foreach (LogEvent ev in events) {
-                if (ev is MethodEvent) {
-                    MethodEvent mev = (MethodEvent) ev;
-                    String hash;
+                double deltaTime = logEvent.timestamp - lastTimestamp;
+                float deltaY = (float) Math.Max(20, Math.Min(40 * (deltaTime / mediumDeltaTime), 80));
+                lastY += deltaY;
+                lastTimestamp = logEvent.timestamp;
 
-                    if (!mev.MethodInfo.IsStatic)
-                        hash = mev.InstanceObjectID.ToString();
-                    else
-                        hash = mev.MethodInfo.ClassName;
-
-
-                    bool drawHeader = false;
-                    if (!columns.ContainsKey(hash))
-                    {
-                        // XXX Creo una nuova colonna
-                        ColumnData c = new ColumnData();
-                        c.column = nextFreeColumn++;
-                        this.columns[hash] = c;
-                        drawHeader = true;
-                    }
-
-                    ColumnData col = (ColumnData)this.columns[hash];
-
-                    float eventY = padding + headerHeight + headerInterspaceHeight + (float) (mev.timestamp - startTime) * scaleY;
-                    float eventX = padding + (colWidth + colInterspace) * col.column;
-
-                    if (drawHeader) {
-                        if (!mev.MethodInfo.IsStatic)
-                        {
-                            this.drawInstanceHeader(e.Graphics, eventX, eventY - headerHeight - headerInterspaceHeight, mev.MethodInfo.ClassName + " (" + mev.InstanceObjectID.ToString() + ")", false);
-                        }
-                        else {
-                            this.drawInstanceHeader(e.Graphics, eventX, eventY - headerHeight - headerInterspaceHeight, mev.MethodInfo.ClassName, true);
-                        }
-                    }
-                    
-                    if (mev.EventType == MethodEvent.EventTypeEnum.EnterEvent) 
-                    {
-                        col.calledBy = this.lastColumnData;
-                        this.lastColumnData = col;
-                        col.openedAtY = eventY;
-                    }
-                    else if (mev.EventType == MethodEvent.EventTypeEnum.LeaveEvent)
-                    {
-                        this.lastColumnData = col.calledBy;
-
-                        this.drawMethod(e.Graphics, eventX + (colWidth - methodBodyWidth) * 0.5f, col.openedAtY, methodBodyWidth, eventY - col.openedAtY);
-
-                        if (col.calledBy != null)
-                        {
-                            float arrowStartX = padding + (colWidth + colInterspace) * col.calledBy.column + (colWidth - methodBodyWidth) * 0.5f + methodBodyWidth;
-                            float arrowEndX = eventX + (colWidth - methodBodyWidth) * 0.5f;
-                            this.drawStartArrow(e.Graphics, arrowStartX, arrowEndX, col.openedAtY + colInterspace * 0.5f, mev.MethodInfo.MethodName);
-                            this.drawReturnArrow(e.Graphics, arrowEndX, arrowStartX, eventY - colInterspace * 0.5f);
-                        }
-
-                    }
-                    
+                if (logEvent is MethodEvent)
+                {
+                    MethodEvent e = (MethodEvent) logEvent;
+                    ClassData currentClassData = getOrCreateClassData(e);
                 }
             }
+
+            this.MinimumSize = new Size((int) (2.0f * padding + classData.Count * (colWidth + colInterspace)), (int) lastY);
+
+            this.Invalidate();
         }
-        
-        
-        
-        private Hashtable columns = new Hashtable();
-        
-        private int minimumMethodHeight = 60;
-        private int maximumStaticHeight = 200;
-        private Pen currentThreadPen = new Pen(Color.Red);
-        private int headerHeight = 40;
-        
-        private ColumnData lastColumnData = null;
-
-        */
-
-
-
-
 
         private Color[] threadColorLibrary = { Color.Red, Color.Blue, Color.Green, Color.Orange, Color.Pink };
         private Color backgroundColor = Color.White;
@@ -178,6 +101,7 @@ namespace Demo
 
         protected override void OnPaint(PaintEventArgs eva)
         {
+            
             base.OnPaint(eva);
 
             classData = new Hashtable();
@@ -199,23 +123,34 @@ namespace Demo
 
             double lastTimestamp = ((LogEvent)events[0]).timestamp;
             float lastY = 0;
-            double minimumDeltaTime = getMinimumDeltaTime();
+            double mediumDeltaTime = getMediumDeltaTime();
+            String lastThreadId = "";
 
             foreach (LogEvent logEvent in events)
             {
-
                 double deltaTime = logEvent.timestamp - lastTimestamp;
-                float deltaY = (float) Math.Min( 20 * (deltaTime / minimumDeltaTime), 30);
+                float deltaY = (float)Math.Max(20, Math.Min(40 * (deltaTime / mediumDeltaTime), 80));
+               
+                float topY = padding + lastY + 40 - 10;
+                float bottomY = topY + deltaY + 20;
 
-                Console.WriteLine("Timestamp: " + logEvent.timestamp + " Delta: " + deltaTime);
+                bool hasToDraw = !((topY <= eva.ClipRectangle.Top && bottomY <= eva.ClipRectangle.Top) || (topY >= eva.ClipRectangle.Bottom && bottomY >= eva.ClipRectangle.Bottom));
 
-                foreach (DictionaryEntry de in classData) {
-                    ClassData d = (ClassData) de.Value;
+                if (!hasToDraw) {
+                    Console.WriteLine(lastY + " " + deltaY + " " + eva.ClipRectangle.Top + " " + eva.ClipRectangle.Bottom);
+                }
 
-                    foreach (MethodData m in d.methodData)
+                if (hasToDraw)
+                {
+                    foreach (DictionaryEntry de in classData)
                     {
-                        Console.WriteLine("Disegno " + m.methodEvent.getHash() + " da " + lastY + " a " + (lastY + deltaY));
-                        drawMethodData(g, m, lastY, lastY + deltaY);
+                        ClassData d = (ClassData)de.Value;
+
+                        foreach (MethodData m in d.methodData)
+                        {
+                            Console.WriteLine("Disegno " + m.methodEvent.getHash() + " da " + lastY + " a " + (lastY + deltaY));
+                            drawMethodData(g, m, lastY, lastY + deltaY);
+                        }
                     }
                 }
 
@@ -224,11 +159,16 @@ namespace Demo
                     MethodEvent e = (MethodEvent) logEvent;
 
                     String currentThreadID = e.ThreadID;
+
+                    if (lastThreadId != currentThreadID) { 
+                        
+                    }
+
                     bool mustDrawHeader = !classData.ContainsKey(e.getHash());
                     ClassData currentClassData = getOrCreateClassData(e);
 
-                    if (mustDrawHeader) {
-                        Console.WriteLine("Disegno header " + lastY);
+                    if (mustDrawHeader)
+                    {
                         drawHeader(g, e, currentClassData.getColumnLeftX(), lastY + deltaY);
                     }
                     
@@ -247,9 +187,9 @@ namespace Demo
 
                         lastMethodData[currentThreadID] = currentMethodData;
 
-                        drawMethodEnter(g, currentMethodData, lastY + deltaY);
+                        if (hasToDraw)
+                            drawMethodEnter(g, currentMethodData, lastY + deltaY);
 
-                        Console.WriteLine("Aggiungo metodo " + e.getHash());
                     }
                     else if (e.EventType == MethodEvent.EventTypeEnum.LeaveEvent) {
 
@@ -257,9 +197,9 @@ namespace Demo
                         lastMethodData[currentThreadID] = currentMethodData.callerMethodData;
                         currentClassData.methodData.RemoveAt(currentClassData.methodData.Count - 1);
 
-                        drawMethodLeave(g, currentMethodData, lastY + deltaY);
+                        if (hasToDraw)
+                         drawMethodLeave(g, currentMethodData, lastY + deltaY);
 
-                        Console.WriteLine("Rimuovo metodo " + e.getHash());
                     }
 
                 }
@@ -286,29 +226,30 @@ namespace Demo
             return (ClassData) this.classData[hash];
         }
 
-        double getMinimumDeltaTime()
+        double getMediumDeltaTime()
         {
 
             if (events.Count == 0) return 0;
 
-            double minDelta = -1;
+            double totDelta = 0;
+            double deltaCount = 0;
             double startTime = ((LogEvent)events[0]).timestamp;
             for (int i = 1; i < events.Count; i++)
             {
                 double t1 = ((LogEvent)events[i - 1]).timestamp;
                 double t2 = ((LogEvent)events[i]).timestamp;
                 double delta = t2 - t1;
-                if (minDelta == -1) minDelta = delta;
-                minDelta = Math.Min(minDelta, delta);
+                totDelta += delta;
+                deltaCount++;
             }
 
-            return minDelta;
+            return Math.Max(totDelta / deltaCount, 1);
         }
 
         void drawHeader(Graphics g, MethodEvent e, float x, float y)
         {
             String title = e.MethodInfo.ClassName;
-            Pen blackBorderPen = new Pen(Color.Black);
+            Pen blackBorderPen = new Pen(Color.Gray);
             Font textFont = new Font("Tahoma", 8);
 
             if (!e.MethodInfo.IsStatic)
@@ -329,7 +270,7 @@ namespace Demo
             }
             else
             {
-                RoundedCornerRectangle(g, blackBorderPen, x, y - boxHeight - 20, colWidth, boxHeight, 10);
+                RoundedCornerRectangle(g, blackBorderPen, x, y - boxHeight - 20, colWidth, boxHeight, boxHeight * 0.3f);
             }
 
             g.DrawString(title, textFont, Brushes.Black, x + colWidth * 0.5f, y + 10 + stringSize.Height * 0.5f - boxHeight - 20, f); 
@@ -475,6 +416,17 @@ namespace Demo
             gfxPath.CloseFigure();
             gfxObj.DrawPath(penObj, gfxPath);
             gfxPath.Dispose();
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // UMLGraph
+            // 
+            this.Name = "UMLGraph";
+            this.ResumeLayout(false);
+
         }
 
     }

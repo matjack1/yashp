@@ -129,9 +129,7 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 			memset(padding, ' ', padCharCount);
 
 			// log the function call
-			if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
-				LogString("%s %s %s%s(%s), id=%d, call count = %d\r\n", padding, functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
-			}
+			LogString("%s %s %s%s(%s), id=%d, call count = %d\r\n", padding, functionInfo->getReturnType().c_str(), functionInfo->getClassName().c_str(), functionInfo->getFunctionName().c_str(), functionInfo->getParameters().c_str(), functionInfo->getFunctionID(), functionInfo->getCallCount());
 			delete padding;
 		}
 		else 
@@ -142,12 +140,10 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 
 		ObjectID stringOID, instanceID = 0;
 		if (functionInfo->isFiltered(frameInfo, m_szAppPath)) {
-			for (UINT i=0; i < argumentInfo->numRanges; i++) {
-				memcpy(&stringOID, ((const void *)(argumentInfo->ranges[i].startAddress)), argumentInfo->ranges[i].length);
 
-				LogString("Argument %d: %x\r\n", i, stringOID);
-				if(i == 0)
-					instanceID = stringOID;
+			if (argumentInfo->numRanges >= 1) {
+				memcpy(&stringOID, ((const void *)(argumentInfo->ranges[0].startAddress)), argumentInfo->ranges[0].length);
+				instanceID = stringOID;
 			}
 
 			// set if the method is static
@@ -187,9 +183,6 @@ void CYashProfiler::Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		QueryPerformanceCounter(&time);
 		QueryPerformanceFrequency(&freq);
 		methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
-		char *stackDepth = new char(256);
-		sprintf(stackDepth, "%d", m_callStackSize);
-		methodEvent->SetAttribute("stackDepth", stackDepth);
 		m_events->LinkEndChild( methodEvent );  
 	}
 }
@@ -231,9 +224,6 @@ void CYashProfiler::Leave(FunctionID functionID, UINT_PTR clientData, COR_PRF_FR
 		QueryPerformanceCounter(&time);
 		QueryPerformanceFrequency(&freq);
 		methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
-		char *stackDepth = new char(256);
-		sprintf(stackDepth, "%d", m_callStackSize);
-		methodEvent->SetAttribute("stackDepth", stackDepth);
 		m_events->LinkEndChild( methodEvent );  
 	}
 }
@@ -252,32 +242,56 @@ void CYashProfiler::Tailcall(FunctionID functionID, UINT_PTR clientData, COR_PRF
 
 STDMETHODIMP CYashProfiler::RuntimeThreadSuspended(ThreadID threadID)
 {
-	LogString("Thread %d Suspended...\r\n\r\n", threadID);
-    return S_OK;
+	return S_OK;
 }
 
 STDMETHODIMP CYashProfiler::RuntimeThreadResumed(ThreadID threadID)
 {
-	LogString("Thread %d resumed...\r\n\r\n", threadID);
-    return S_OK;
+return S_OK;
 }
 
 STDMETHODIMP CYashProfiler::ThreadCreated(ThreadID threadID)
 {
+
+	std::stringstream threadStr;
+	threadStr << threadID;
+
+	// add to XML
+	TiXmlElement * methodEvent = new TiXmlElement( "threadEvent" );
+	methodEvent->SetAttribute("threadId", threadStr.str().c_str());
+	methodEvent->SetAttribute("type", "Create");
+	LARGE_INTEGER time, freq;
+	QueryPerformanceCounter(&time);
+	QueryPerformanceFrequency(&freq);
+	methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
+	m_events->LinkEndChild( methodEvent );  
+
 	LogString("Thread %d Created...\r\n\r\n", threadID);
     return S_OK;
 }
 
 STDMETHODIMP CYashProfiler::ThreadDestroyed(ThreadID threadID)
 {
-	LogString("Thread %d Destroyed...\r\n\r\n", threadID);
+	std::stringstream threadStr;
+	threadStr << threadID;
+
+	// add to XML
+	TiXmlElement * methodEvent = new TiXmlElement( "threadEvent" );
+	methodEvent->SetAttribute("threadId", threadStr.str().c_str());
+	methodEvent->SetAttribute("type", "Destroy");
+	LARGE_INTEGER time, freq;
+	QueryPerformanceCounter(&time);
+	QueryPerformanceFrequency(&freq);
+	methodEvent->SetDoubleAttribute("timestamp", (float) time.QuadPart / (float) freq.QuadPart);
+	m_events->LinkEndChild( methodEvent );  
+
+	LogString("Thread %d Created...\r\n\r\n", threadID);
     return S_OK;
 }
 
 STDMETHODIMP CYashProfiler::ThreadAssignedToOSThread(ThreadID managedThreadID, DWORD osThreadID) 
 {
-	LogString("Thread %d Assigned to OS Thread...\r\n\r\n", managedThreadID);
-    return S_OK;
+return S_OK;
 }
 
 STDMETHODIMP CYashProfiler::ExceptionThrown(ObjectID thrownObjectID)
@@ -436,6 +450,8 @@ void CYashProfiler::CloseLogFile()
 // Writes a string to the log file.  Uses the same calling convention as printf.
 void CYashProfiler::LogString(char *pszFmtString, ...)
 {
+	return;
+
 	CHAR szBuffer[4096]; DWORD dwWritten = 0;
 
 	if(m_hLogFile != INVALID_HANDLE_VALUE)

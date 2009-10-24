@@ -101,7 +101,27 @@ namespace Demo
 
     class ThreadEvent : LogEvent
     {
+        public enum EventTypeEnum
+        {
+            CreateEvent = 0x01,
+            DestroyEvent = 0x02,
+        }
 
+        private EventTypeEnum _eventType;
+
+        private String _threadID;
+
+        public String ThreadID
+        {
+            get { return _threadID; }
+            set { _threadID = value; }
+        }
+
+        public EventTypeEnum EventType
+        {
+            get { return _eventType; }
+            set { _eventType = value; }
+        }
     }
 
     class ExceptionEvent : LogEvent
