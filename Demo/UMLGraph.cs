@@ -45,7 +45,7 @@ namespace Demo
                 }
             }
 
-            this.MinimumSize = new Size((int) (2.0f * padding + classData.Count * (colWidth + colInterspace)), (int) lastY);
+            this.MinimumSize = new Size((int) (2.0f * padding + classData.Count * (colWidth + colInterspace)), (int) (2.0f * padding + lastY + 40));
 
             this.Invalidate();
         }
@@ -124,7 +124,7 @@ namespace Demo
             double lastTimestamp = ((LogEvent)events[0]).timestamp;
             float lastY = 0;
             double mediumDeltaTime = getMediumDeltaTime();
-            String lastThreadId = "";
+            String lastThreadId = null;
 
             foreach (LogEvent logEvent in events)
             {
@@ -136,10 +136,6 @@ namespace Demo
 
                 bool hasToDraw = !((topY <= eva.ClipRectangle.Top && bottomY <= eva.ClipRectangle.Top) || (topY >= eva.ClipRectangle.Bottom && bottomY >= eva.ClipRectangle.Bottom));
 
-                if (!hasToDraw) {
-                    Console.WriteLine(lastY + " " + deltaY + " " + eva.ClipRectangle.Top + " " + eva.ClipRectangle.Bottom);
-                }
-
                 if (hasToDraw)
                 {
                     foreach (DictionaryEntry de in classData)
@@ -148,7 +144,6 @@ namespace Demo
 
                         foreach (MethodData m in d.methodData)
                         {
-                            Console.WriteLine("Disegno " + m.methodEvent.getHash() + " da " + lastY + " a " + (lastY + deltaY));
                             drawMethodData(g, m, lastY, lastY + deltaY);
                         }
                     }
@@ -159,10 +154,6 @@ namespace Demo
                     MethodEvent e = (MethodEvent) logEvent;
 
                     String currentThreadID = e.ThreadID;
-
-                    if (lastThreadId != currentThreadID) { 
-                        
-                    }
 
                     bool mustDrawHeader = !classData.ContainsKey(e.getHash());
                     ClassData currentClassData = getOrCreateClassData(e);
@@ -202,6 +193,19 @@ namespace Demo
 
                     }
 
+                    lastThreadId = currentThreadID;
+                }
+
+                if (logEvent is ExceptionEvent)
+                {
+                    if (hasToDraw)
+                        drawException(g, (MethodData) lastMethodData[lastThreadId], lastY + deltaY);
+                }
+
+                if (logEvent is ThreadEvent)
+                {
+                    if (hasToDraw && log)
+                        drawException(g, (MethodData)lastMethodData[lastThreadId], lastY + deltaY);
                 }
 
                 lastY += deltaY;
@@ -295,6 +299,26 @@ namespace Demo
             //g.DrawRectangle(pen, leftX, startY, rightX - leftX, endY - startY);
             g.DrawLine(pen, leftX, startY, leftX, endY);
             g.DrawLine(pen, rightX, startY, rightX, endY);
+        }
+
+        void drawException(Graphics g, MethodData d, float y)
+        {
+            Brush pen = new SolidBrush(getThreadColor(d.methodEvent));
+
+            float x = d.getColumnRightX() + 5;
+
+            GraphicsPath gfxPath = new GraphicsPath();
+            gfxPath.AddLine(x +  7, y +  0, x + 15, y    );
+            gfxPath.AddLine(x + 15, y +  0, x +  8, y + 7);
+            gfxPath.AddLine(x +  7, y +  8, x + 12, y + 8);
+            gfxPath.AddLine(x + 12, y +  8, x +  0, y + 16);
+            gfxPath.AddLine(x +  0, y + 16, x +  4, y + 9);
+            gfxPath.AddLine(x +  4, y + 9, x +  0, y + 9);
+
+            gfxPath.CloseFigure();
+            g.FillPath(pen, gfxPath);
+            gfxPath.Dispose();
+
         }
 
         void drawMethodEnter(Graphics g, MethodData d, float startY)
