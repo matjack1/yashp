@@ -91,6 +91,7 @@ namespace Demo
                 if (node.Name == "exceptionEvent")
                 {
                     ExceptionEvent t = new ExceptionEvent();
+                    t.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty));
                     events.Add(t);
                 }
             }
