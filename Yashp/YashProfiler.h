@@ -86,6 +86,7 @@ private:
 	
 	// TinyXml structure
 	TiXmlDocument m_doc;
+	TiXmlElement *m_infos;
 	TiXmlElement *m_events;
 	TiXmlElement *m_functionInfos;
 };

@@ -114,9 +114,13 @@ bool CFunctionInfo::isFiltered(COR_PRF_FRAME_INFO frameInfo, wchar_t *appPath) {
 			// if this didn't originate from our module, we don't care
 			// so we don't see all of the CLR calls going on (and there 
 			// are a ton of them which is why we are doing this!)
-			if(wcsicmp(szName, appPath) == 0 ){			
-				return true;
+			if(wcsicmp(szName, appPath) == 0 ) {			
+				m_isInApp = "true";
 			}
+			else {
+				m_isInApp = "false";
+			}
+			return true;
 		}
 	}
 	return false;

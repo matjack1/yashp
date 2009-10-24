@@ -53,10 +53,10 @@ CYashProfiler::CYashProfiler()
 	m_doc.LinkEndChild( decl );
 	m_functionInfos = new TiXmlElement( "functionInfos" );
 	m_events = new TiXmlElement( "events" );
-	TiXmlElement *infos = new TiXmlElement( "infos" );
-	m_doc.LinkEndChild( infos );
-	infos->LinkEndChild( m_functionInfos );
-	infos->LinkEndChild( m_events );
+	m_infos = new TiXmlElement( "infos" );
+	m_doc.LinkEndChild( m_infos );
+	m_infos->LinkEndChild( m_functionInfos );
+	m_infos->LinkEndChild( m_events );
 }
 
 HRESULT CYashProfiler::FinalConstruct()
@@ -390,21 +390,29 @@ STDMETHODIMP CYashProfiler::Shutdown()
 	{
 		// log the function's info
 		CFunctionInfo* functionInfo = iter->second;
-		if (strstr(functionInfo->getClassName().c_str(), "System") == NULL) {
-			LogString("%s : call count = %d\r\n", functionInfo->getFunctionName().c_str(), functionInfo->getCallCount());
-			TiXmlElement *functionElement = new TiXmlElement("functionInfo");
-			functionElement->SetAttribute("functionId", functionInfo->getFunctionID());
-			functionElement->SetAttribute("className", functionInfo->getClassName().c_str());
-			functionElement->SetAttribute("methodName", functionInfo->getFunctionName().c_str());
-			functionElement->SetAttribute("static", functionInfo->getStaticMethod().c_str());
-			functionElement->SetAttribute("returnType", functionInfo->getReturnType().c_str());
-			m_functionInfos->LinkEndChild( functionElement );
-		}
+		LogString("%s : call count = %d\r\n", functionInfo->getFunctionName().c_str(), functionInfo->getCallCount());
+		TiXmlElement *functionElement = new TiXmlElement("functionInfo");
+		functionElement->SetAttribute("functionId", functionInfo->getFunctionID());
+		functionElement->SetAttribute("className", functionInfo->getClassName().c_str());
+		functionElement->SetAttribute("methodName", functionInfo->getFunctionName().c_str());
+		functionElement->SetAttribute("static", functionInfo->getStaticMethod().c_str());
+		functionElement->SetAttribute("returnType", functionInfo->getReturnType().c_str());
+		functionElement->SetAttribute("isInApp", functionInfo->getIsInApp().c_str());
+		m_functionInfos->LinkEndChild( functionElement );
+
 		// free the memory for the object
 		delete iter->second;
 	}
 	// write the XML file
-	m_doc.SaveFile( "YashpOutput.xml" );
+	WCHAR xmlFile[_MAX_PATH];
+	GetEnvironmentVariable(_T("XML_FILENAME"), xmlFile, _MAX_PATH);
+	
+	char xmlFileStr[_MAX_PATH];
+	sprintf(xmlFileStr, "%ls", xmlFile);
+	stringstream ss;
+	ss << xmlFileStr;
+
+	m_doc.SaveFile( ss.str().c_str() );
 
 	// clear the map
 	m_functionMap.clear();

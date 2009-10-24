@@ -19,6 +19,7 @@
 
 #include "CorProfilerCallback.h"
 #include <string>
+#include <sstream>
 #include <iostream>
 
 class CFunctionInfo
@@ -33,6 +34,7 @@ public:
 	inline std::string getReturnType() { return m_sReturnType; }
 	inline std::string getClassID() { return m_classID; }
 	inline std::string getStaticMethod() { return m_staticMethod; }
+	inline std::string getIsInApp() { return m_isInApp; }
 	inline int getArgCount() { return m_argCount; }
 	inline long int getInstanceAddr() { return m_instanceAddr; }
 
@@ -64,6 +66,7 @@ private:
 	std::string m_sFunctionName;
 	std::string m_classID;
 	std::string m_staticMethod;
+	std::string m_isInApp;
 	int m_argCount;
 	long int m_instanceAddr;
 	UINT32 m_iMethodAttributes;
