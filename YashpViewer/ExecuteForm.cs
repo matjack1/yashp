@@ -19,7 +19,7 @@ namespace YashpViewer
         {
             InitializeComponent();
             button1.Enabled = false;
-            textBox2.Text = "C:\\";
+            //textBox2.Text = "C:\\";
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -40,16 +40,16 @@ namespace YashpViewer
 
         private void button3_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
 
-            openFileDialog1.InitialDirectory = "C:\\Documents and Settings\\Administrator\\My Documents\\Visual Studio 2008\\Projects\\yashp\\ApplicationTest\\bin\\Release";
-            openFileDialog1.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
-            openFileDialog1.FilterIndex = 2;
-            openFileDialog1.RestoreDirectory = true;
+            saveFileDialog1.InitialDirectory = "C:\\Documents and Settings\\Administrator\\My Documents\\Visual Studio 2008\\Projects\\yashp\\ApplicationTest\\bin\\Release";
+            saveFileDialog1.Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*";
+            saveFileDialog1.FilterIndex = 2;
+            saveFileDialog1.RestoreDirectory = true;
 
-            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                textBox2.Text = openFileDialog1.FileName;
+                textBox2.Text = saveFileDialog1.FileName;
             }
         }
 
@@ -65,11 +65,11 @@ namespace YashpViewer
             }
 
             // make sure the XML exists
-            if (File.Exists(textBox2.Text) == false)
+            /*if (File.Exists(textBox2.Text) == false)
             {
                 MessageBox.Show("The XML '" + textBox1.Text + "' does not exist.");
                 return;
-            }
+            }*/
 
             // create a process executor
             psi = new ProcessStartInfo(textBox1.Text);
@@ -111,6 +111,11 @@ namespace YashpViewer
 
             psi.UseShellExecute = false;
             Process p = Process.Start(psi);
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
 
     }

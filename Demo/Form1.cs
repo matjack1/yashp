@@ -25,7 +25,7 @@ namespace Demo
 
         ArrayList readFromXML()
         {
-            XPathDocument doc = new XPathDocument("C:\\Documents and Settings\\Administrator\\My Documents\\Visual Studio 2008\\Projects\\yashp\\YashpViewer\\bin\\Debug\\YashpOutput.xml");
+            XPathDocument doc = new XPathDocument("C:\\Documents and Settings\\mat\\Desktop\\yo.xml.txt");
             XPathNavigator nav = doc.CreateNavigator();
 
             XPathExpression functionInfosExpression = nav.Compile("infos/functionInfos/functionInfo");
