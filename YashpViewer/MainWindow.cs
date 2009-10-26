@@ -25,22 +25,6 @@ namespace YashpViewer
             threads = new SortedList();
         }
 
-        private void start_Click(object sender, EventArgs e)
-        {
-            
-
-        }
-
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        {
-            
-        }
-
-        private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void attachToProcessToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ExecuteForm form = new ExecuteForm();
@@ -103,7 +87,8 @@ namespace YashpViewer
             // filling objects checked list
             foreach (DictionaryEntry d in objects)
             {
-                checkedListBox2.Items.Add(d.Key);
+                objectList.Items.Add(d.Key);
+                objectList.SetItemChecked(objectList.Items.Count - 1, true);
             }
 
             ArrayList events = new ArrayList();
@@ -159,46 +144,53 @@ namespace YashpViewer
             // filling threads checked list
             foreach (DictionaryEntry d in threads)
             {
-                checkedListBox1.Items.Add(d.Key);
+                threadList.Items.Add(d.Key);
+                threadList.SetItemChecked(threadList.Items.Count - 1, true);
             }
 
             return events;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void redraw()
         {
             ArrayList unwantedObjectsIDs = new ArrayList();
             ArrayList unwantedThreadsIDs = new ArrayList();
 
-            for (int i = 0; i < checkedListBox1.Items.Count; i++)
+            for (int i = 0; i < threadList.Items.Count; i++)
             {
-                if (checkedListBox1.GetItemChecked(i))
+                if (!threadList.GetItemChecked(i))
                 {
-                    continue;
-                }
-                else
-                {
-                    unwantedThreadsIDs.Add( threads[ checkedListBox1.Items[i].ToString() ] );
+                    unwantedThreadsIDs.Add( threads[ threadList.Items[i].ToString() ] );
                 }
             }
 
-            for (int i = 0; i < checkedListBox2.Items.Count; i++)
+            for (int i = 0; i < objectList.Items.Count; i++)
             {
-                if (checkedListBox2.GetItemChecked(i))
+                if (!objectList.GetItemChecked(i))
                 {
-                    continue;
-                }
-                else
-                {
-                    unwantedObjectsIDs.Add( objects[ checkedListBox2.Items[i].ToString() ] );
+                    unwantedObjectsIDs.Add( objects[ objectList.Items[i].ToString() ] );
                 }
             }
                 
-
             umlGraph.setUnwantedObjectIDs(unwantedObjectsIDs);
             umlGraph.setUnwantedThreadIDs(unwantedThreadsIDs);
-
             this.umlGraph.setEvents(events);
+
+        }
+
+        private void objectList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            redraw();
+        }
+
+        private void threadList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            redraw();
+        }
+
+        private void MainWindow_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -244,7 +244,7 @@ namespace YashpViewer
 
                 if (logEvent is ExceptionEvent)
                 {
-                    if (hasToDraw)
+                    if (hasToDraw && lastThreadId != null)
                         drawException(g, (MethodData) lastMethodData[lastThreadId], lastY + deltaY);
                 }
 
