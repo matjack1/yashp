@@ -22,7 +22,7 @@ namespace YashpViewer
         static private int timestampWidth = 60;
 
         static private int nextFreeColumn = 0;
-        static private float zoomScale = 0.5f;
+        static private float zoomScale = 1.0f;
 
         private Hashtable classData = new Hashtable();
         private Hashtable lastMethodData = new Hashtable();
@@ -31,6 +31,7 @@ namespace YashpViewer
 
         private ArrayList unwantedObjectIDs = new ArrayList();
         private ArrayList unwantedThreadIDs = new ArrayList();
+        private ArrayList unwantedClassesIDs = new ArrayList(); 
 
         class ClassData
         {
@@ -72,6 +73,12 @@ namespace YashpViewer
 
         public void setUnwantedThreadIDs(ArrayList ids) {
             unwantedThreadIDs = ids;
+            this.Invalidate();
+        }
+
+
+        public void setUnwantedClassesIDs(ArrayList ids) {
+            unwantedClassesIDs = ids;
             this.Invalidate();
         }
 
@@ -152,6 +159,7 @@ namespace YashpViewer
                     MethodEvent e = (MethodEvent)logEvent;
                     if (unwantedObjectIDs.Contains(e.InstanceObjectID)) continue;
                     if (unwantedThreadIDs.Contains(e.ThreadID)) continue;
+                    if (unwantedClassesIDs.Contains(e.MethodInfo.ClassName)) continue;
                 }
 
                 if (logEvent is ThreadEvent)

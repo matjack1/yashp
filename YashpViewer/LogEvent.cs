@@ -13,7 +13,13 @@ namespace YashpViewer
         private String _returnType;
         private String _functionID;
         private bool _isStatic;
+        private bool _isInApp;
 
+        public bool IsInApp
+        {
+            get { return _isInApp; }
+            set { _isInApp = value; }
+        }
         public bool IsStatic
         {
             get { return _isStatic; }

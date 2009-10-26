@@ -15,14 +15,17 @@ namespace YashpViewer
     public partial class MainWindow : Form
     {
         private ArrayList events;
-        private SortedList objects;
-        private SortedList threads;
+
+        private ArrayList threads;
+        private ArrayList classes;
+        private ArrayList inAppClasses;
+        private ArrayList objects;
+
+        private float currentZoom = 1.0f;
 
         public MainWindow()
         {
             InitializeComponent();
-            objects = new SortedList();
-            threads = new SortedList();
         }
 
         private void attachToProcessToolStripMenuItem_Click(object sender, EventArgs e)
@@ -44,6 +47,8 @@ namespace YashpViewer
             {
                 events = readXml(openFileDialog1.FileName);
             }
+
+            redraw();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -53,6 +58,12 @@ namespace YashpViewer
 
         private ArrayList readXml(string xmlFile)
         {
+
+            classes = new ArrayList();
+            objects = new ArrayList();
+            threads = new ArrayList();
+            inAppClasses = new ArrayList();
+
             XPathDocument doc = new XPathDocument(xmlFile);
             XPathNavigator nav = doc.CreateNavigator();
 
@@ -72,23 +83,20 @@ namespace YashpViewer
                 m.FunctionID = node.GetAttribute("functionId", String.Empty);
                 m.ClassName = node.GetAttribute("className", String.Empty);
                 m.MethodName = node.GetAttribute("methodName", String.Empty);
+                if (node.GetAttribute("isInApp", String.Empty).Length > 0)
+                    m.IsInApp = Convert.ToBoolean(node.GetAttribute("isInApp", String.Empty));
                 if (node.GetAttribute("static", String.Empty).Length > 0)
                     m.IsStatic = Convert.ToBoolean(node.GetAttribute("static", String.Empty));
                 m.ReturnType = node.GetAttribute("returnType", String.Empty);
 
                 functionInfos[m.FunctionID] = m;
 
-                if (!objects.ContainsKey(m.ClassName))
-                {
-                    objects.Add(m.ClassName, m.FunctionID);
+                if (!classes.Contains(m.ClassName)) {
+                    classes.Add(m.ClassName);
+                    if (m.IsInApp) inAppClasses.Add(classes.Count - 1);
+                    classList.Items.Add(m.ClassName);
+                    classList.SetItemChecked(classList.Items.Count - 1, true);
                 }
-            }
-
-            // filling objects checked list
-            foreach (DictionaryEntry d in objects)
-            {
-                objectList.Items.Add(d.Key);
-                objectList.SetItemChecked(objectList.Items.Count - 1, true);
             }
 
             ArrayList events = new ArrayList();
@@ -99,6 +107,7 @@ namespace YashpViewer
 
                 if (node.Name == "methodEvent")
                 {
+
                     MethodEvent m = new MethodEvent();
                     m.InstanceObjectID = node.GetAttribute("objectId", String.Empty);
                     m.MethodInfo = (MethodInfo)functionInfos[node.GetAttribute("functionId", String.Empty)];
@@ -111,6 +120,13 @@ namespace YashpViewer
                         m.EventType = MethodEvent.EventTypeEnum.EnterEvent;
                     else if (type == "Leave")
                         m.EventType = MethodEvent.EventTypeEnum.LeaveEvent;
+
+                    if (m.InstanceObjectID != "0" && !objects.Contains(m.InstanceObjectID))
+                    {
+                        objects.Add(m.InstanceObjectID);
+                        objectList.Items.Add("Instance " + m.InstanceObjectID + " (" + m.MethodInfo.ClassName + ")");
+                        objectList.SetItemChecked(objectList.Items.Count - 1, true);
+                    }
 
                     events.Add(m);
                 }
@@ -128,9 +144,11 @@ namespace YashpViewer
 
                     events.Add(t);
 
-                    if (!threads.ContainsKey(t.ThreadID))
+                    if (!threads.Contains(t.ThreadID))
                     {
-                        threads.Add(t.ThreadID, t.ThreadID);
+                        threads.Add(t.ThreadID);
+                        threadList.Items.Add("Thread " + t.ThreadID);
+                        threadList.SetItemChecked(threadList.Items.Count - 1, true);
                     }
                 }
                 if (node.Name == "exceptionEvent")
@@ -141,13 +159,6 @@ namespace YashpViewer
                 }
             }
 
-            // filling threads checked list
-            foreach (DictionaryEntry d in threads)
-            {
-                threadList.Items.Add(d.Key);
-                threadList.SetItemChecked(threadList.Items.Count - 1, true);
-            }
-
             return events;
         }
 
@@ -155,12 +166,13 @@ namespace YashpViewer
         {
             ArrayList unwantedObjectsIDs = new ArrayList();
             ArrayList unwantedThreadsIDs = new ArrayList();
+            ArrayList unwantedClassesIDs = new ArrayList();
 
             for (int i = 0; i < threadList.Items.Count; i++)
             {
                 if (!threadList.GetItemChecked(i))
                 {
-                    unwantedThreadsIDs.Add( threads[ threadList.Items[i].ToString() ] );
+                    unwantedThreadsIDs.Add( threads[ i ] );
                 }
             }
 
@@ -168,12 +180,22 @@ namespace YashpViewer
             {
                 if (!objectList.GetItemChecked(i))
                 {
-                    unwantedObjectsIDs.Add( objects[ objectList.Items[i].ToString() ] );
+                    unwantedObjectsIDs.Add( objects[ i ] );
+                }
+            }
+
+            for (int i = 0; i < classList.Items.Count; i++)
+            {
+                if (!classList.GetItemChecked(i))
+                {
+                    unwantedClassesIDs.Add( classes[ i ] );
                 }
             }
                 
             umlGraph.setUnwantedObjectIDs(unwantedObjectsIDs);
             umlGraph.setUnwantedThreadIDs(unwantedThreadsIDs);
+            umlGraph.setUnwantedClassesIDs(unwantedClassesIDs);
+
             this.umlGraph.setEvents(events);
 
         }
@@ -188,9 +210,83 @@ namespace YashpViewer
             redraw();
         }
 
-        private void MainWindow_Load(object sender, EventArgs e)
+        private void toolStripButton1_Click(object sender, EventArgs e)
         {
+            currentZoom *= 0.9f;
+            umlGraph.setZoom(currentZoom);
+        }
 
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            currentZoom *= 1.1f;
+            umlGraph.setZoom(currentZoom);
+        }
+
+        private void selectThreads_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < objectList.Items.Count; i++)
+            {
+                threadList.SetItemChecked(i, true);
+            }
+            redraw();
+        }
+
+        private void deselectThreads_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < objectList.Items.Count; i++)
+            {
+                threadList.SetItemChecked(i, false);
+            }
+            redraw();
+        }
+
+        private void selectObjects_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < objectList.Items.Count; i++) {
+                objectList.SetItemChecked(i, true);
+            }
+            redraw();
+        }
+
+        private void deselectObjects_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < classList.Items.Count; i++)
+            {
+                objectList.SetItemChecked(i, false);
+            }
+            redraw();
+        }
+
+        private void selectClasses_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < classList.Items.Count; i++)
+            {
+                classList.SetItemChecked(i, true);
+            }
+            redraw();
+        }
+
+        private void deselectClasses_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < classList.Items.Count; i++)
+            {
+                classList.SetItemChecked(i, false);
+            }
+            redraw();
+        }
+
+        private void classList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            redraw();
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < classList.Items.Count; i++)
+            {
+                classList.SetItemChecked(i, inAppClasses.Contains(i));
+            }
+            redraw();
         }
     }
 }
