@@ -38,6 +38,7 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.toolStripContainer1 = new System.Windows.Forms.ToolStripContainer();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.umlGraph = new YashpViewer.UMLGraph();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
@@ -51,6 +52,7 @@
             this.flowLayoutPanel5 = new System.Windows.Forms.FlowLayoutPanel();
             this.selectClasses = new System.Windows.Forms.Button();
             this.deselectClasses = new System.Windows.Forms.Button();
+            this.button7 = new System.Windows.Forms.Button();
             this.classList = new System.Windows.Forms.CheckedListBox();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.flowLayoutPanel2 = new System.Windows.Forms.FlowLayoutPanel();
@@ -69,8 +71,6 @@
             this.checkedListBox2 = new System.Windows.Forms.CheckedListBox();
             this.button5 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
-            this.umlGraph = new YashpViewer.UMLGraph();
-            this.button7 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -189,6 +189,14 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(851, 397);
             this.panel2.TabIndex = 15;
+            // 
+            // umlGraph
+            // 
+            this.umlGraph.AutoSize = true;
+            this.umlGraph.Location = new System.Drawing.Point(0, 0);
+            this.umlGraph.Name = "umlGraph";
+            this.umlGraph.Size = new System.Drawing.Size(851, 397);
+            this.umlGraph.TabIndex = 15;
             // 
             // toolStrip1
             // 
@@ -327,6 +335,16 @@
             this.deselectClasses.UseVisualStyleBackColor = true;
             this.deselectClasses.Click += new System.EventHandler(this.deselectClasses_Click);
             // 
+            // button7
+            // 
+            this.button7.Location = new System.Drawing.Point(165, 3);
+            this.button7.Name = "button7";
+            this.button7.Size = new System.Drawing.Size(210, 23);
+            this.button7.TabIndex = 2;
+            this.button7.Text = "Select Only Main Application Classes";
+            this.button7.UseVisualStyleBackColor = true;
+            this.button7.Click += new System.EventHandler(this.button7_Click);
+            // 
             // classList
             // 
             this.classList.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -435,7 +453,7 @@
             this.checkedListBox1.FormattingEnabled = true;
             this.checkedListBox1.Location = new System.Drawing.Point(3, 3);
             this.checkedListBox1.Name = "checkedListBox1";
-            this.checkedListBox1.Size = new System.Drawing.Size(837, 154);
+            this.checkedListBox1.Size = new System.Drawing.Size(837, 167);
             this.checkedListBox1.TabIndex = 0;
             // 
             // tabPage4
@@ -484,7 +502,7 @@
             this.checkedListBox2.FormattingEnabled = true;
             this.checkedListBox2.Location = new System.Drawing.Point(3, 3);
             this.checkedListBox2.Name = "checkedListBox2";
-            this.checkedListBox2.Size = new System.Drawing.Size(837, 154);
+            this.checkedListBox2.Size = new System.Drawing.Size(837, 167);
             this.checkedListBox2.TabIndex = 0;
             // 
             // button5
@@ -504,24 +522,6 @@
             this.button6.TabIndex = 1;
             this.button6.Text = "Deselect All";
             this.button6.UseVisualStyleBackColor = true;
-            // 
-            // umlGraph
-            // 
-            this.umlGraph.AutoSize = true;
-            this.umlGraph.Location = new System.Drawing.Point(0, 0);
-            this.umlGraph.Name = "umlGraph";
-            this.umlGraph.Size = new System.Drawing.Size(851, 397);
-            this.umlGraph.TabIndex = 15;
-            // 
-            // button7
-            // 
-            this.button7.Location = new System.Drawing.Point(165, 3);
-            this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(210, 23);
-            this.button7.TabIndex = 2;
-            this.button7.Text = "Select Only Main Application Classes";
-            this.button7.UseVisualStyleBackColor = true;
-            this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
             // MainWindow
             // 

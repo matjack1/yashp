@@ -64,6 +64,10 @@ namespace YashpViewer
             threads = new ArrayList();
             inAppClasses = new ArrayList();
 
+            classList.Items.Clear();
+            objectList.Items.Clear();
+            threadList.Items.Clear();
+
             XPathDocument doc = new XPathDocument(xmlFile);
             XPathNavigator nav = doc.CreateNavigator();
 

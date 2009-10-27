@@ -73,18 +73,21 @@ namespace YashpViewer
 
         public void setUnwantedThreadIDs(ArrayList ids) {
             unwantedThreadIDs = ids;
+            setEvents(events);
             this.Invalidate();
         }
 
 
         public void setUnwantedClassesIDs(ArrayList ids) {
             unwantedClassesIDs = ids;
+            setEvents(events);
             this.Invalidate();
         }
 
         public void setUnwantedObjectIDs(ArrayList ids)
         {
             unwantedObjectIDs = ids;
+            setEvents(events);
             this.Invalidate();
         }
 
@@ -95,33 +98,10 @@ namespace YashpViewer
 
         public void setEvents(ArrayList eventsLog)
         {
-            events = eventsLog;
-
-            classData = new Hashtable();
-            lastMethodData = new Hashtable();
             threadColor = new Hashtable();
             nextFreeThreadColor = 0;
-            nextFreeColumn = 0;
+            events = eventsLog;
 
-            double lastTimestamp = ((LogEvent)events[0]).timestamp;
-            float lastY = 0;
-            double mediumDeltaTime = getMediumDeltaTime();
-
-            foreach (LogEvent logEvent in events)
-            {
-                double deltaTime = logEvent.timestamp - lastTimestamp;
-                float deltaY = (float) Math.Max(20, Math.Min(40 * (deltaTime / mediumDeltaTime), 80));
-                lastY += deltaY;
-                lastTimestamp = logEvent.timestamp;
-
-                if (logEvent is MethodEvent)
-                {
-                    MethodEvent e = (MethodEvent) logEvent;
-                    ClassData currentClassData = getOrCreateClassData(e);
-                }
-            }
-
-            this.MinimumSize = new Size((int) (timestampWidth + 3.0f * padding + classData.Count * (colWidth + colInterspace)), (int) (2.0f * padding + lastY + 40));
             this.Invalidate();
         }
 
@@ -143,7 +123,7 @@ namespace YashpViewer
             
             g.TranslateTransform(padding + padding + timestampWidth, padding);
 
-            double lastTimestamp = ((LogEvent)events[0]).timestamp;
+            double lastTimestamp = -1;
             double firstTimeStamp = lastTimestamp;
             float lastY = 0;
             double mediumDeltaTime = getMediumDeltaTime();
@@ -166,6 +146,12 @@ namespace YashpViewer
                 {
                     ThreadEvent e = (ThreadEvent)logEvent;
                     if (unwantedThreadIDs.Contains(e.ThreadID)) continue;
+                }
+
+                if (lastTimestamp == -1)
+                {
+                    firstTimeStamp = logEvent.timestamp;
+                    lastTimestamp = logEvent.timestamp;
                 }
 
                 double deltaTime = logEvent.timestamp - lastTimestamp;
@@ -262,13 +248,16 @@ namespace YashpViewer
 
                     if (threadEvent.EventType == ThreadEvent.EventTypeEnum.CreateEvent)
                     {
+                        drawThreadCreated(g, threadEvent.ThreadID, lastY + deltaY);
                         threadCreationY[threadEvent.ThreadID] = lastY + deltaY;
                     }
 
                     if (threadEvent.EventType == ThreadEvent.EventTypeEnum.DestroyEvent)
                     {
                         MethodData md = (MethodData)threadDestroyY[threadEvent.ThreadID];
-                        drawThreadDestroy(g, md, md.leaveY, lastY + deltaY);
+                        drawThreadDestroyed(g, threadEvent.ThreadID, lastY + deltaY);
+                        if (md != null)
+                            drawThreadDestroy(g, md, md.leaveY, lastY + deltaY);
                     }
                 }
 
@@ -276,8 +265,10 @@ namespace YashpViewer
                 lastTimestamp = logEvent.timestamp;
 
             }
-            
-        }
+
+            this.MinimumSize = new Size((int)(timestampWidth + 3.0f * padding + classData.Count * (colWidth + colInterspace)), (int)(2.0f * padding + lastY + 40));
+            this.Size = this.MinimumSize;
+      }
 
         ClassData getOrCreateClassData(MethodEvent mev)
         {
@@ -369,6 +360,13 @@ namespace YashpViewer
             g.DrawLine(pen, rightX, startY, rightX, endY);
         }
 
+        void drawThreadCreated(Graphics g, String threadID, float startY)
+        {
+            Brush brush = new SolidBrush(getThreadColor(threadID));
+            float dotWidth = 5 * zoomScale;
+            g.FillEllipse(brush, 0, startY - dotWidth * 0.5f, dotWidth, dotWidth);
+        }
+
         void drawThreadCreate(Graphics g, MethodData d, float startY, float endY)
         {
             String threadID = d.methodEvent.ThreadID;
@@ -376,13 +374,20 @@ namespace YashpViewer
             float x = d.getColumnLeftX() + methodBodyWidth * zoomScale * 0.25f;
 
             Pen pen = new Pen(getThreadColor(threadID), 2 * zoomScale);
-            Brush brush = new SolidBrush(getThreadColor(threadID));
-
-            float dotWidth = 5 * zoomScale;
-
-            g.FillEllipse(brush, 0, startY - dotWidth * 0.5f, dotWidth, dotWidth);
             g.DrawLine(pen, 0, startY, x, startY);
             g.DrawLine(pen, x, startY, x, endY);
+        }
+
+        void drawThreadDestroyed(Graphics g, String threadID, float endY)
+        {
+            Brush brush = new SolidBrush(getThreadColor(threadID));
+
+            float arrowWidth = 5 * zoomScale;
+
+            Pen pen = new Pen(getThreadColor(threadID), 2 * zoomScale);
+
+            g.DrawLine(pen, 0, endY, arrowWidth, endY - arrowWidth);
+            g.DrawLine(pen, 0, endY, arrowWidth, endY + arrowWidth);
         }
 
         void drawThreadDestroy(Graphics g, MethodData d, float startY, float endY)
