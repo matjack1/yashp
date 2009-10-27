@@ -423,6 +423,14 @@ STDMETHODIMP CYashProfiler::Shutdown()
     return S_OK;
 }
 
+// Garbage Collection related
+
+STDMETHODIMP CYashProfiler::GarbageCollectionFinished() {
+	LogString("GARBAGE COLLECTION FINISHED\r\n");
+
+	return S_OK;
+}
+
 // Creates the log file.  It uses the LOG_FILENAME environment variable if it 
 // exists, otherwise it creates the file "ICorProfilerCallback Log.log" in the 
 // executing directory.  This function doesn't report success or not because 
@@ -458,8 +466,6 @@ void CYashProfiler::CloseLogFile()
 // Writes a string to the log file.  Uses the same calling convention as printf.
 void CYashProfiler::LogString(char *pszFmtString, ...)
 {
-	return;
-
 	CHAR szBuffer[4096]; DWORD dwWritten = 0;
 
 	if(m_hLogFile != INVALID_HANDLE_VALUE)
@@ -477,7 +483,7 @@ void CYashProfiler::LogString(char *pszFmtString, ...)
 HRESULT CYashProfiler::SetEventMask()
 {
 	// set the event mask 
-	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_MONITOR_THREADS | COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_DISABLE_INLINING | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL );
+	DWORD eventMask = (DWORD)(COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_MONITOR_THREADS | COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_DISABLE_INLINING | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL | COR_PRF_MONITOR_GC );
 	return m_pICorProfilerInfo->SetEventMask(eventMask);
 }
 

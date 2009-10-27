@@ -48,6 +48,7 @@ CYashProfiler();
     STDMETHOD(RuntimeThreadSuspended)(ThreadID threadid);
     STDMETHOD(RuntimeThreadResumed)(ThreadID threadid);
 	STDMETHOD(ExceptionThrown)(ObjectID thrownObjectID);
+	STDMETHOD(GarbageCollectionFinished)();
 
 	// callback functions
 	void Enter(FunctionID functionID, UINT_PTR clientData, COR_PRF_FRAME_INFO frameInfo, COR_PRF_FUNCTION_ARGUMENT_INFO *argumentInfo);
