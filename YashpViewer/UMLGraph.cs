@@ -36,8 +36,8 @@ namespace YashpViewer
         class ClassData
         {
             public int columnNumber;
-            public MethodInfo methodInfo;
             public String instanceObjectID;
+            public float creationY;
 
             public ArrayList methodData = new ArrayList();
 
@@ -45,6 +45,17 @@ namespace YashpViewer
             {
                 return columnNumber * (colWidth + colInterspace) * zoomScale;
             }
+
+            public float getColumnMidX()
+            {
+                return getColumnLeftX() + colWidth * 0.5f * zoomScale;
+            }
+
+            public float getColumnRightX()
+            {
+                return getColumnLeftX() + colWidth * zoomScale;
+            }
+
         }
 
         class MethodData
@@ -92,7 +103,7 @@ namespace YashpViewer
         }
 
         public void setZoom(float zoom) {
-            zoomScale = Math.Min(Math.Max(zoom, 0.5f), 2.0f);
+            zoomScale = Math.Min(Math.Max(zoom, 0.1f), 2.0f);
             this.Invalidate();
         }
 
@@ -103,6 +114,10 @@ namespace YashpViewer
             events = eventsLog;
 
             this.Invalidate();
+        }
+
+        private String convertToReadableNumber(double number) {
+            return Math.Round(number * 1000, 3) + " ms";
         }
 
         protected override void OnPaint(PaintEventArgs eva)
@@ -120,8 +135,13 @@ namespace YashpViewer
             if (events.Count == 0) {
                 return;
             }
-            
-            g.TranslateTransform(padding + padding + timestampWidth, padding);
+            if (zoomScale >= 0.5)
+            {
+                g.TranslateTransform(padding + padding + timestampWidth, padding);
+            }
+            else {
+                g.TranslateTransform(padding, padding);
+            }
 
             double lastTimestamp = -1;
             double firstTimeStamp = lastTimestamp;
@@ -164,9 +184,11 @@ namespace YashpViewer
 
                 if (hasToDraw)
                 {
-
-                    String time = (lastTimestamp + deltaTime - firstTimeStamp) + " us";
-                    g.DrawString(time, new Font("Tahoma", 7), Brushes.Black, -padding - timestampWidth, deltaY + lastY - 7);
+                    if (zoomScale >= 0.5)
+                    {
+                        String time = convertToReadableNumber(lastTimestamp + deltaTime - firstTimeStamp);
+                        g.DrawString(time, new Font("Courier New", 7), Brushes.Black, -padding - timestampWidth, deltaY + lastY - 7);
+                    }
 
                     foreach (DictionaryEntry de in classData)
                     {
@@ -174,7 +196,11 @@ namespace YashpViewer
 
                         foreach (MethodData m in d.methodData)
                         {
-                            drawMethodData(g, m, lastY, lastY + deltaY);
+                            if (m.classData.getColumnLeftX() < eva.ClipRectangle.Right && m.classData.getColumnRightX() > eva.ClipRectangle.Left)
+                            {
+                                drawMethodData(g, m, lastY, lastY + deltaY);
+                            }
+                            
                         }
                     }
                 }
@@ -191,13 +217,13 @@ namespace YashpViewer
                     if (mustDrawHeader)
                     {
                         drawHeader(g, e, currentClassData.getColumnLeftX(), lastY + deltaY);
+                        currentClassData.creationY = lastY + deltaY;
                     }
                     
                     if (e.EventType == MethodEvent.EventTypeEnum.EnterEvent) {
 
                         MethodData currentMethodData = new MethodData();
                         
-
                         if (lastMethodData.ContainsKey(currentThreadID))
                             currentMethodData.callerMethodData = (MethodData) lastMethodData[currentThreadID];
                         
@@ -219,7 +245,8 @@ namespace YashpViewer
                         }
 
                     }
-                    else if (e.EventType == MethodEvent.EventTypeEnum.LeaveEvent) {
+                    else if (e.EventType == MethodEvent.EventTypeEnum.LeaveEvent && currentClassData.methodData.Count > 0)
+                    {
 
                         MethodData currentMethodData = (MethodData) currentClassData.methodData[currentClassData.methodData.Count - 1];
                         lastMethodData[currentThreadID] = currentMethodData.callerMethodData;
@@ -239,9 +266,9 @@ namespace YashpViewer
                 if (logEvent is ExceptionEvent)
                 {
                     if (hasToDraw && lastThreadId != null)
-                        drawException(g, (MethodData) lastMethodData[lastThreadId], lastY + deltaY);
+                       drawException(g, (MethodData) lastMethodData[lastThreadId], lastY + deltaY);
                 }
-
+                
                 if (logEvent is ThreadEvent)
                 {
                     ThreadEvent threadEvent = (ThreadEvent)logEvent;
@@ -266,7 +293,13 @@ namespace YashpViewer
 
             }
 
-            this.MinimumSize = new Size((int)(timestampWidth + 3.0f * padding + classData.Count * (colWidth + colInterspace)), (int)(2.0f * padding + lastY + 40));
+            Pen blackPen = new Pen(Color.Gray);
+            foreach (DictionaryEntry d in this.classData) {
+                ClassData c = (ClassData)d.Value;
+                g.DrawLine(blackPen, c.getColumnMidX(), c.creationY, c.getColumnMidX(), lastY);
+            }
+
+            this.MinimumSize = new Size((int)(timestampWidth + 3.0f * padding + (nextFreeColumn * (colWidth + colInterspace)) * zoomScale), (int)(2.0f * padding * zoomScale + lastY + 40));
             this.Size = this.MinimumSize;
       }
 
@@ -321,30 +354,29 @@ namespace YashpViewer
             SizeF stringSize = new SizeF();
             stringSize = g.MeasureString(title, textFont, new SizeF(colWidth * zoomScale, 50));
 
-            int boxHeight = (int) (stringSize.Height + 20);
+            int boxHeight = (int) (stringSize.Height + 20 * zoomScale);
 
             if (e.MethodInfo.IsStatic)
             {
-                g.DrawRectangle(blackBorderPen, x, y - boxHeight - 20, colWidth * zoomScale, boxHeight);
+                g.DrawRectangle(blackBorderPen, x, y - boxHeight - 20 * zoomScale, colWidth * zoomScale, boxHeight);
             }
             else
             {
-                RoundedCornerRectangle(g, blackBorderPen, x, y - boxHeight - 20, colWidth * zoomScale, boxHeight, boxHeight * 0.3f);
+                RoundedCornerRectangle(g, blackBorderPen, x, y - boxHeight - 20 * zoomScale, colWidth * zoomScale, boxHeight, boxHeight * 0.3f);
             }
-
-            g.DrawString(title, textFont, Brushes.Black, x + colWidth * 0.5f * zoomScale, y + 10 + stringSize.Height * 0.5f - boxHeight - 20, f); 
+               
+            if (zoomScale >= 0.5) {
+                Rectangle r = new Rectangle((int) x, (int)(y - boxHeight - 10 * zoomScale), (int)(colWidth * zoomScale), (int)(stringSize.Height));
+                g.DrawString(title, textFont, Brushes.Black, r, f); 
+            }
         }
 
         Color getThreadColor(String ThreadID) {
 
             if (!threadColor.ContainsKey(ThreadID)) {
-                Console.WriteLine("Creo per " + ThreadID);
                 threadColor[ThreadID] = threadColorLibrary[nextFreeThreadColor++];
                 if (nextFreeThreadColor == threadColorLibrary.Length) nextFreeThreadColor = 0;
             }
-
-            Console.WriteLine(ThreadID + " -> " + threadColor[ThreadID]);
-
             return (Color) threadColor[ThreadID];
         }
 
@@ -418,9 +450,11 @@ namespace YashpViewer
 
             float x = d.getColumnRightX() + 5;
 
+            GraphicsState s = g.Save();
+
             g.TranslateTransform(x, y);
 
-            GraphicsState s = g.Save();
+            
 
             g.ScaleTransform(zoomScale, zoomScale);
 
@@ -463,31 +497,30 @@ namespace YashpViewer
             float rightX = d.getColumnRightX();
 
             g.DrawLine(pen, leftX, startY, rightX, startY);
-
+            
             if (d.callerMethodData != null)
             {
                 drawReturnArrow(g, d, d.callerMethodData, startY);
             }
         }
 
-
         void drawStartArrow(Graphics g, MethodData d1, MethodData d2, float y, String title)
         {
             Pen p = new Pen(getThreadColor(d1.methodEvent.ThreadID), 2 * zoomScale);
-
 
             if (d1.classData == d2.classData)
             {
                 float arrowWidth = 5 * zoomScale;
 
-                g.DrawLine(p, d1.getColumnRightX(), y + 8 * zoomScale, d2.getColumnRightX() + 20 * zoomScale, y + 8 * zoomScale);
-                g.DrawLine(p, d2.getColumnRightX() + 20 * zoomScale, y + 8 * zoomScale, d2.getColumnRightX() + 20 * zoomScale, y - 8 * zoomScale);
-                g.DrawLine(p, d2.getColumnRightX() + 20 * zoomScale, y - 8 * zoomScale, d2.getColumnRightX(), y - 8 * zoomScale);
+                g.DrawLine(p, d1.getColumnRightX(), y + 8 * zoomScale, d1.getColumnRightX() + 20 * zoomScale, y + 8 * zoomScale);
+                g.DrawLine(p, d1.getColumnRightX() + 20 * zoomScale, y + 8 * zoomScale, d1.getColumnRightX() + 20 * zoomScale, y - 8 * zoomScale);
+                g.DrawLine(p, d1.getColumnRightX() + 20 * zoomScale, y - 8 * zoomScale, d2.getColumnRightX(), y - 8 * zoomScale);
 
                 g.DrawLine(p, d1.getColumnRightX() + arrowWidth, y + 3 * zoomScale, d1.getColumnRightX(), y + 8 * zoomScale);
                 g.DrawLine(p, d1.getColumnRightX() + arrowWidth, y + 13 * zoomScale, d1.getColumnRightX(), y + 8 * zoomScale);
 
-                g.DrawString(title, new Font("Tahoma", 7 * zoomScale), Brushes.Black, d2.getColumnRightX() + 5 * zoomScale, y - 23 * zoomScale);
+                if (zoomScale >= 0.6)
+                    g.DrawString(title, new Font("Tahoma", 7 * zoomScale), Brushes.Black, d2.getColumnRightX() + 5 * zoomScale, y - 23 * zoomScale);
 
                 return;
             }
@@ -506,12 +539,14 @@ namespace YashpViewer
                 {
                     g.DrawLine(p, x2 - arrowWidth, y - arrowWidth, x2, y);
                     g.DrawLine(p, x2 - arrowWidth, y + arrowWidth, x2, y);
+                    if (zoomScale >= 0.6)
                     g.DrawString(title, new Font("Tahoma", 7 * zoomScale), Brushes.Black, x1 + arrowWidth, y - 15 * zoomScale);
                 }
                 else
                 {
                     g.DrawLine(p, x2 + arrowWidth, y - arrowWidth, x2, y);
                     g.DrawLine(p, x2 + arrowWidth, y + arrowWidth, x2, y);
+                    if (zoomScale >= 0.6)
                     g.DrawString(title, new Font("Tahoma", 7 * zoomScale), Brushes.Black, x1 - arrowWidth, y - 15 * zoomScale);
                 }
             }

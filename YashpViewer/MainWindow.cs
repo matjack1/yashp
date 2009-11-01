@@ -105,6 +105,10 @@ namespace YashpViewer
 
             ArrayList events = new ArrayList();
 
+            System.Globalization.NumberFormatInfo info = new System.Globalization.NumberFormatInfo();
+            info.NumberDecimalSeparator = ".";
+            info.NumberGroupSeparator = ",";
+
             while (eventsIterator.MoveNext())
             {
                 XPathNavigator node = eventsIterator.Current.Clone();
@@ -116,7 +120,7 @@ namespace YashpViewer
                     m.InstanceObjectID = node.GetAttribute("objectId", String.Empty);
                     m.MethodInfo = (MethodInfo)functionInfos[node.GetAttribute("functionId", String.Empty)];
                     m.ThreadID = node.GetAttribute("threadId", String.Empty);
-                    m.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty));
+                    m.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty), info);
 
                     String type = node.GetAttribute("type", String.Empty);
 
@@ -137,7 +141,7 @@ namespace YashpViewer
                 if (node.Name == "threadEvent")
                 {
                     ThreadEvent t = new ThreadEvent();
-                    t.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty));
+                    t.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty), info);
                     t.ThreadID = node.GetAttribute("threadId", String.Empty);
 
                     String type = node.GetAttribute("type", String.Empty);
@@ -158,7 +162,7 @@ namespace YashpViewer
                 if (node.Name == "exceptionEvent")
                 {
                     ExceptionEvent t = new ExceptionEvent();
-                    t.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty));
+                    t.timestamp = Convert.ToDouble(node.GetAttribute("timestamp", String.Empty), info);
                     events.Add(t);
                 }
             }
